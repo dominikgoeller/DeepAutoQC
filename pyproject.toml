@@ -2,7 +2,7 @@
 name = "DeepAutoQC"
 description = "Image classification for the ENIGMA HALFPipe project using deep learning"
 readme = "README.md"
-version = ""
+dynamic = ["version", "readme"]
 authors = [
     { name = "Dominik Goeller", email = "dominik.goeller@charite.de"},
     { name = "Lea Waller", email = "lea.waller@charite.de"}
@@ -26,3 +26,6 @@ dependencies = [
 ]
 [build-system]
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+[tool.setuptools.dynamic]
+version = {attr = "DeepAutoQC.VERSION"}
+readme = {file = "README.md"}
