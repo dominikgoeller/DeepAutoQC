@@ -1,0 +1,25 @@
+[project]
+name = "DeepAutoQC"
+description = "Image classification for the ENIGMA HALFPipe project using deep learning"
+version = ""
+authors = [
+    { name = "Dominik Goeller", email = "dominik.goeller@charite.de"},
+    { name = "Lea Waller", email = "lea.waller@charite.de"}
+]
+dependencies = [
+    "os",
+    "torch",
+    "pandas",
+    "numpy",
+    "matplotlib.pyplot",
+    "torchio",
+    "random",
+    "pathlib",
+    "nibabel",
+    "torchvision",
+    "torch.utils.data",
+    "multiprocessing",
+    "halfpipe",
+    "nilearn",
+    "niworkflows"
+]
