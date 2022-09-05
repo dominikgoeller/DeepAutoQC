@@ -1,6 +1,7 @@
 [project]
 name = "DeepAutoQC"
 description = "Image classification for the ENIGMA HALFPipe project using deep learning"
+readme = "README.md"
 version = ""
 authors = [
     { name = "Dominik Goeller", email = "dominik.goeller@charite.de"},
@@ -23,3 +24,5 @@ dependencies = [
     "nilearn",
     "niworkflows"
 ]
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
