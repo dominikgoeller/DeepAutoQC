@@ -1,7 +1,6 @@
 [project]
 name = "DeepAutoQC"
 description = "Image classification for the ENIGMA HALFPipe project using deep learning"
-readme = "README.md"
 dynamic = ["version", "readme"]
 authors = [
     { name = "Dominik Goeller", email = "dominik.goeller@charite.de"},
