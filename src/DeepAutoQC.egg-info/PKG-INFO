@@ -1,0 +1,9 @@
+Metadata-Version: 2.1
+Name: DeepAutoQC
+Version: 0.1.0
+Summary: Image classification for the ENIGMA HALFPipe project using deep learning
+Author-email: Dominik Goeller <dominik.goeller@charite.de>, Lea Waller <lea.waller@charite.de>
+Description-Content-Type: text/x-rst
+
+# Deep-AutoQC
+Image classification for the ENIGMA HALFpipe project using deep learning - BA Thesis

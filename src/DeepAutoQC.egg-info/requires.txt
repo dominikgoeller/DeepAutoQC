@@ -1,0 +1,11 @@
+torch
+pandas
+numpy
+matplotlib
+torchio
+pathlib
+nibabel
+torchvision
+halfpipe
+nilearn
+niworkflows
