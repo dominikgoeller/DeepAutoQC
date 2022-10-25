@@ -19,7 +19,8 @@ dependencies = [
     "halfpipe",
     "nilearn",
     "niworkflows",
-    "seaborn"
+    "seaborn",
+    "pre-commit"
 ]
 [build-system]
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
@@ -30,3 +31,5 @@ exclude = ["deepautoqc.tests*"]  # exclude packages matching these glob patterns
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 [tool.setuptools.dynamic]
 readme = {file = "README.md"}
+[tool.isort]
+profile = "black"
