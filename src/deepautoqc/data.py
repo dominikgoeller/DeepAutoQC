@@ -98,6 +98,15 @@ class TestSkullstripDataset(Dataset):
         return image
 
 
+def generate_test_loader(
+    dataset: TestSkullstripDataset, batchsize: int, num_workers: int
+) -> DataLoader:
+    test_loader = DataLoader(
+        dataset=dataset, batch_size=batchsize, num_workers=num_workers
+    )
+    return test_loader
+
+
 def generate_train_validate_split(
     dataset: SkullstripDataset, batch_size: int, seed: int, num_workers: int
 ) -> tuple[DataLoader, DataLoader]:
@@ -123,11 +132,11 @@ def generate_train_validate_split(
         training_set,
         batch_size=batch_size,
         shuffle=True,
-        pin_memory=False,
+        pin_memory=True,
         num_workers=num_workers,
     )
     val_loader = DataLoader(
-        validation_set, batch_size=batch_size, pin_memory=False, num_workers=num_workers
+        validation_set, batch_size=batch_size, pin_memory=True, num_workers=num_workers
     )
 
     return train_loader, val_loader

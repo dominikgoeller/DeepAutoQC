@@ -98,7 +98,7 @@ def to_image(t1w, mask_path):
     seg_nii = rotate_affine(seg_nii, rot=canonical_r)
 
     data = image_nii.get_fdata()
-    plot_params = robust_set_limits(data, plot_params)
+    plot_params = _robust_set_limits(data, plot_params)
 
     bbox_nii = seg_nii
 

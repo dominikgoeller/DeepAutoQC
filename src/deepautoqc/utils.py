@@ -144,3 +144,12 @@ def device_preparation(n_gpus: int) -> tuple[torch.device, list[int]]:
     device = torch.device("cuda" if n_gpus > 0 else "cpu")
     gpu_device_ids = list(range(n_gpus))
     return device, gpu_device_ids
+
+
+def load_model(model_filepath: Path):
+    """Load model from checkpoint and set to eval mode."""
+    ckpt = torch.load(model_filepath)
+    model = ckpt["model"]
+    model.load_state_dict(ckpt["model_state_dict"])
+    model.eval()
+    return model

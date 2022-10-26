@@ -8,7 +8,8 @@ class config:
     Dataset and Model
     """
 
-    DATA_PATH = "./T1w_Mask_Data"
+    DATA_PATH = "./data/training_data"
+    TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
     requires_grad = True
@@ -28,3 +29,4 @@ class config:
     Folders for checkpoints
     """
     EARLYSTOP_PATH = "./results/ResNet50"
+    DUMMY_MODEL_CKPT = "./results/ResNet50/dummybestmodel.pt"
