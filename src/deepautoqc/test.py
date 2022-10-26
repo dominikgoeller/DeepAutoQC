@@ -1,7 +1,11 @@
+import io
 from pathlib import Path
 
+import cairosvg
+import numpy as np
 import torch
 from args import config
+from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader
 
@@ -11,6 +15,18 @@ from deepautoqc.utils import (
     device_preparation,
     load_model,
 )
+
+
+def svgRead(filename):
+    """Load an SVG file and return image in Numpy array"""
+    # Convert SVG to PNG in memory
+    png_content = cairosvg.svg2png(url=filename, output_height=870, output_width=2047)
+    # Convert PNG to Numpy array
+    res = np.array(
+        Image.open(io.BytesIO(png_content))
+    )  # has dimension of (870,2047,4) due to unknown reasons
+    image_without_alpha = res[:, :, :3]  # drop alpha channel of image
+    return image_without_alpha
 
 
 def test(model, test_l: DataLoader, device: torch.device):
