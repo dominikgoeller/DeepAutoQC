@@ -105,7 +105,7 @@ def train_validate(
             "val_loss": valid_loss,
             "epoch": epoch,
         }
-        earlystopper(valid_loss, best_model=best_model)
+        earlystopper(valid_loss, best_model=best_model, epoch=epoch)
         if earlystopper.early_stop:
             print("Early Stopping!")
             break
