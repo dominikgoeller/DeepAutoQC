@@ -8,7 +8,9 @@ class config:
     Dataset and Model
     """
 
-    DATA_PATH = "./data/training_data"
+    DATA_PATH = (
+        "/data/gpfs-1/users/goellerd_c/work/usable"  # path to data on hpc-cluster
+    )
     TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
@@ -18,7 +20,7 @@ class config:
     """
     n_gpus = 4
     batch_size = 16
-    epochs = 50
+    epochs = 3
     num_workers = (
         32  # checked in jupyter notebook for optimal value. 2 epochs in 229 secs
     )
@@ -28,5 +30,5 @@ class config:
     """
     Folders for checkpoints
     """
-    EARLYSTOP_PATH = "./results/ResNet50"
+    EARLYSTOP_PATH = "/data/gpfs-1/users/goellerd_c/work/saved_models/ResNet50trueSGD.pt"  # path to save model on hpc-cluster
     DUMMY_MODEL_CKPT = "./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
