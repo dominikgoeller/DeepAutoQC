@@ -105,7 +105,7 @@ def create_skullstrip_list(usable_dir: Path) -> list:
     """
     skullstrips = []
     bids_idx = BIDSIndex()
-    bids_idx.put(usable_dir)
+    bids_idx.put(root=usable_dir)
 
     subjects = bids_idx.get_tag_values("sub")
     for subject in subjects:
