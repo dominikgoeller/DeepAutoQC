@@ -1,3 +1,5 @@
+from pathlib import Path
+
 """
 Config Class to define hyperparameters more smoothly
 """
@@ -8,7 +10,7 @@ class config:
     Dataset and Model
     """
 
-    DATA_PATH = (
+    DATA_PATH = Path(
         "/data/gpfs-1/users/goellerd_c/work/usable"  # path to data on hpc-cluster
     )
     TEST_DATA_PATH = "./data/test_data"
