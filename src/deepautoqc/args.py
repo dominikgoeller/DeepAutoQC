@@ -29,4 +29,4 @@ class config:
     Folders for checkpoints
     """
     EARLYSTOP_PATH = "./results/ResNet50"
-    DUMMY_MODEL_CKPT = "./results/ResNet50/dummybestmodel.pt"
+    DUMMY_MODEL_CKPT = "./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
