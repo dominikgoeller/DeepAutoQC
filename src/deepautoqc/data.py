@@ -19,16 +19,16 @@ class SkullstripDataset(Dataset):
 
         # Transforms
         self.unusable_transforms_dict = {
-            tio.RandomAffine(degrees=(15), center="image"): 1,
-            tio.RandomAffine(scales=(0.82, 0.82), center="image"): 1,
-            tio.RandomFlip(axes="AP", flip_probability=0.5): 1,
-            tio.RandomSwap(patch_size=10, num_iterations=50): 1,
-            tio.RandomNoise(): 1,
-            tio.RandomSpike(num_spikes=(1, 3), intensity=(0.4, 0.6)): 1,
+            tio.RandomAffine(degrees=(20), center="image"): 0.35,
+            tio.RandomAffine(scales=(0.85, 0.85), center="image"): 0.35,
+            tio.RandomFlip(axes="AP", flip_probability=0.5): 0.05,
+            tio.RandomSwap(patch_size=10, num_iterations=50): 0.05,
+            tio.RandomNoise(): 0.05,
+            tio.RandomSpike(num_spikes=(1, 3), intensity=(0.4, 0.6)): 0.05,
             tio.RandomGhosting(
                 num_ghosts=(1, 5), intensity=(0.5, 1.2), restore=0.05
-            ): 1,
-            tio.RandomMotion(degrees=20, translation=20, num_transforms=3): 1,
+            ): 0.05,
+            tio.RandomMotion(degrees=20, translation=20, num_transforms=3): 0.05,
         }
 
         self.unusable_transform = tio.Compose(
