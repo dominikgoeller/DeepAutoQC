@@ -11,7 +11,7 @@ def resnet50(requires_grad: bool = config.requires_grad):
         requires_grad = Boolean which determines if params should be frozen or not
     """
     model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
-    if not requires_grad:
+    if not requires_grad:  # if set to false freeze params
         for param in model.parameters():
             param.requires_grad = False
 
