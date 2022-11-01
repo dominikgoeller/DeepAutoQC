@@ -27,6 +27,7 @@ def train_validate(
     val_l: DataLoader,
     criterion,
     optimizer,
+    scheduler,
     earlystopper: EarlyStopping,
     device: torch.device,
     n_epochs: int = config.epochs,
@@ -37,6 +38,7 @@ def train_validate(
         model.train()
         train_bar = tqdm(train_l)
         train_total = 0
+
         for i, (inputs, labels) in enumerate(train_bar):
             inputs, labels = inputs.to(device, non_blocking=True), labels.to(
                 device, non_blocking=True
@@ -136,19 +138,23 @@ def main(data_path: Path, which_optim: str):
             lr=config.lr,
             momentum=config.momentum,
             nesterov=True,
+            weight_decay=1e-4,
         )
     elif which_optim == "ADAM":
-        optimizer = optim.Adam(params=model.parameters(), lr=config.lr)
+        optimizer = optim.Adam(
+            params=model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-9
+        )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
 
     # scheduler!!
     earlystopping = EarlyStopping(verbose=True)
-
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
     train_validate(
         model=model,
         train_l=train_loader,
         val_l=val_loader,
         criterion=criterion,
         optimizer=optimizer,
+        scheduler=scheduler,
         earlystopper=earlystopping,
         device=device,
     )

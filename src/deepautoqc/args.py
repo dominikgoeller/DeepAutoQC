@@ -28,7 +28,7 @@ class config:
     )
     lr = 1e-3
     momentum = 0.9
-    optimizer = "SGD"  # or "ADAM"
+    optimizer = "ADAM"  # or "SGD"
     """
     Folders for checkpoints
     """
