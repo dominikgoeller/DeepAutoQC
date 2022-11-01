@@ -1,4 +1,5 @@
 import random
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -8,7 +9,9 @@ from args import config
 from halfpipe.file_index.bids import BIDSIndex
 from torch import nn
 
-from deepautoqc.models import resnet50
+sys.path.append("..", 0)
+
+from models import resnet50  # noqa: E402
 
 
 class EarlyStopping:
