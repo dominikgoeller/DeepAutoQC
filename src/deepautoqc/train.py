@@ -12,9 +12,6 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
-
-sys.path.append("..", 0)
-
 from utils import (  # noqa: E402
     EarlyStopping,
     create_skullstrip_list,
