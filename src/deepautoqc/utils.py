@@ -6,6 +6,9 @@ import numpy as np
 import torch
 from args import config
 from halfpipe.file_index.bids import BIDSIndex
+from torch import nn
+
+from deepautoqc.models import resnet50
 
 
 class EarlyStopping:
@@ -148,8 +151,32 @@ def device_preparation(n_gpus: int) -> tuple[torch.device, list[int]]:
 
 def load_model(model_filepath: Path):
     """Load model from checkpoint and set to eval mode."""
-    ckpt = torch.load(model_filepath)
-    model = ckpt["model"]
+    if torch.cuda.is_available():
+        ckpt = torch.load(model_filepath)
+    ckpt = torch.load(
+        model_filepath, map_location=torch.device("cpu")
+    )  # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
+    # model = ckpt["model"]
+    model = nn.DataParallel(
+        resnet50()
+    )  # wrap resnet50 model with nn.DataParallel to not get missing_keys error!
     model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
+    return model
+
+
+def resume_training(model_filepath: Path):
+    if torch.cuda.is_available():
+        ckpt = torch.load(model_filepath)
+    ckpt = torch.load(
+        model_filepath, map_location=torch.device("cpu")
+    )  # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
+    # model = ckpt["model"]
+    model = nn.DataParallel(
+        resnet50()
+    )  # wrap resnet50 model with nn.DataParallel to not get missing_keys error!
+    optimizer = ckpt["optimizer"]
+    model.load_state_dict(ckpt["model_state_dict"])
+    optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+    model.train()
     return model
