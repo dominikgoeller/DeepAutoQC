@@ -132,13 +132,13 @@ def main(data_path: Path, which_optim: str):
     criterion = nn.CrossEntropyLoss().to(device=device)
     if which_optim == "SGD":
         optimizer = optim.SGD(
-            params=model.parameters,
+            params=model.parameters(),
             lr=config.lr,
             momentum=config.momentum,
             nesterov=True,
         )
     elif which_optim == "ADAM":
-        optimizer = optim.Adam(params=model.parameters, lr=config.lr)
+        optimizer = optim.Adam(params=model.parameters(), lr=config.lr)
 
     # scheduler!!
     earlystopping = EarlyStopping(verbose=True)
