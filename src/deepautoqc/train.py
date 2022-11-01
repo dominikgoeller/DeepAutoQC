@@ -137,7 +137,8 @@ def main(data_path: Path, which_optim: str):
             momentum=config.momentum,
             nesterov=True,
         )
-    optimizer = optim.Adam(params=model.parameters, lr=config.lr)
+    elif which_optim == "ADAM":
+        optimizer = optim.Adam(params=model.parameters, lr=config.lr)
 
     # scheduler!!
     earlystopping = EarlyStopping(verbose=True)
