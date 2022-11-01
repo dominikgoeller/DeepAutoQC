@@ -1,3 +1,4 @@
+import sys
 import time
 from pathlib import Path
 
@@ -11,7 +12,10 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
-from utils import (
+
+sys.path.append("..", 0)
+
+from utils import (  # noqa: E402
     EarlyStopping,
     create_skullstrip_list,
     device_preparation,
