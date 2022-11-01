@@ -74,8 +74,8 @@ class EarlyStopping:
             self.trace_func(
                 f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
             )
-        save_path = self.path + datetime.today().strftime("%Y-%m-%d") + ".pt"
-        torch.save(best_model, save_path)
+        # save_path = self.path + datetime.today().strftime("%Y-%m-%d") + ".pt"
+        torch.save(best_model, self.path)
         self.val_loss_min = val_loss
 
 
