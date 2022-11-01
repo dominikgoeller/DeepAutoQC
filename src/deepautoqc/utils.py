@@ -7,11 +7,8 @@ import numpy as np
 import torch
 from args import config
 from halfpipe.file_index.bids import BIDSIndex
+from models import resnet50
 from torch import nn
-
-sys.path.append("..", 0)
-
-from models import resnet50  # noqa: E402
 
 
 class EarlyStopping:
