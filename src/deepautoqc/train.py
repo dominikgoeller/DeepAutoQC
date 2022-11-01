@@ -97,6 +97,7 @@ def train_validate(
         best_model = {
             "model": model,
             "model_state_dict": model.state_dict(),
+            "optimizer": optimizer,
             "optimizer_state_dict": optimizer.state_dict(),
             "val_accuracy": valid_correct,
             "train_loss": train_loss,
