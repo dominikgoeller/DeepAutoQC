@@ -16,7 +16,7 @@ class config:
     TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
-    requires_grad = True
+    requires_grad = False
     """
     Hyper Arguments
     """
@@ -32,5 +32,5 @@ class config:
     """
     Folders for checkpoints
     """
-    EARLYSTOP_PATH = "/data/gpfs-1/users/goellerd_c/work/saved_models/ResNet50trueADAM.pt"  # path to save model on hpc-cluster
+    EARLYSTOP_PATH = "/data/gpfs-1/users/goellerd_c/work/saved_models/ResNet50falseADAM.pt"  # path to save model on hpc-cluster
     DUMMY_MODEL_CKPT = "./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
