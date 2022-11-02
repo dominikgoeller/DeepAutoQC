@@ -32,13 +32,14 @@ def train_validate(
     device: torch.device,
     n_epochs: int = config.epochs,
 ):
+    train_losses = []
+    val_losses = []
     for epoch in range(n_epochs):
         train_loss, valid_loss, train_correct, valid_correct = 0.0, 0.0, 0.0, 0.0
         start_time = time.monotonic()
         model.train()
         train_bar = tqdm(train_l)
         train_total = 0
-
         for i, (inputs, labels) in enumerate(train_bar):
             inputs, labels = inputs.to(device, non_blocking=True), labels.to(
                 device, non_blocking=True
@@ -91,6 +92,8 @@ def train_validate(
         train_correct = np.round(train_correct / train_total, 6)
         valid_correct = np.round(valid_correct / valid_total, 6)
 
+        train_losses.append(train_loss)
+        val_losses.append(valid_loss)
         print(f"------ Epoch: {epoch} ------")
         print(f"EpochTime:{epoch_mins}m {epoch_secs}s")
         print(f"Train loss: {train_loss}")
@@ -106,6 +109,8 @@ def train_validate(
             "train_loss": train_loss,
             "val_loss": valid_loss,
             "epoch": epoch,
+            "train_losses": train_losses,
+            "val_losses": val_losses,
         }
         earlystopper(valid_loss, best_model=best_model, epoch=epoch)
         if earlystopper.early_stop:

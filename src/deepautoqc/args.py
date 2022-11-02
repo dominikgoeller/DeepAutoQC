@@ -22,7 +22,7 @@ class config:
     """
     n_gpus = 4
     batch_size = 16
-    epochs = 3
+    epochs = 30
     num_workers = (
         32  # checked in jupyter notebook for optimal value. 2 epochs in 229 secs
     )
@@ -32,5 +32,5 @@ class config:
     """
     Folders for checkpoints
     """
-    EARLYSTOP_PATH = "/data/gpfs-1/users/goellerd_c/work/saved_models/ResNet50trueSGD.pt"  # path to save model on hpc-cluster
+    EARLYSTOP_PATH = "/data/gpfs-1/users/goellerd_c/work/saved_models/ResNet50trueADAM.pt"  # path to save model on hpc-cluster
     DUMMY_MODEL_CKPT = "./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
