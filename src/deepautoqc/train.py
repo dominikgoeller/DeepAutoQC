@@ -146,14 +146,15 @@ def main(data_path: Path, which_optim: str):
             nesterov=True,
             weight_decay=1e-4,
         )
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
     elif which_optim == "ADAM":
         optimizer = optim.Adam(
             params=model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-9
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
+        scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
 
     # scheduler!!
     earlystopping = EarlyStopping(verbose=True)
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
     train_validate(
         model=model,
         train_l=train_loader,
