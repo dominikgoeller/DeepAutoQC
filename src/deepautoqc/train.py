@@ -40,6 +40,7 @@ def train_validate(
         model.train()
         train_bar = tqdm(train_l)
         train_total = 0
+        scheduler.step()
         for i, (inputs, labels) in enumerate(train_bar):
             inputs, labels = inputs.to(device, non_blocking=True), labels.to(
                 device, non_blocking=True
