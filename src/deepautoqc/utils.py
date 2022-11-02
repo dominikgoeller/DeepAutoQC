@@ -21,7 +21,7 @@ class EarlyStopping:
     def __init__(
         self,
         path: Path = config.EARLYSTOP_PATH,
-        patience=5,
+        patience=7,
         verbose=False,
         delta=0,
         trace_func=print,
