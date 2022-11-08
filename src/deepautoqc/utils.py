@@ -94,7 +94,7 @@ def reproducibility(seed: int = 42) -> None:
     """
     torch.manual_seed(seed)
     random.seed(seed)
-    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
 def create_skullstrip_list(usable_dir: Path) -> list:
@@ -171,10 +171,10 @@ def resume_training(model_filepath: Path):
     ckpt = torch.load(
         model_filepath, map_location=torch.device("cpu")
     )  # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
-    # model = ckpt["model"]
-    model = nn.DataParallel(
-        resnet50()
-    )  # wrap resnet50 model with nn.DataParallel to not get missing_keys error!
+    model = ckpt["model"]
+    # model = nn.DataParallel(
+    #    resnet50()
+    # )  # wrap resnet50 model with nn.DataParallel to not get missing_keys error!
     optimizer = ckpt["optimizer"]
     model.load_state_dict(ckpt["model_state_dict"])
     optimizer.load_state_dict(ckpt["optimizer_state_dict"])
