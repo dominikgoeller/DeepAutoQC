@@ -18,6 +18,7 @@ class SkullstripDataset(Dataset):
         self.skullstrips = skullstrips
 
         # Transforms
+        # separate konfigurationsdatei für wahrscheinlichkeiten der transforms, plotting aller funktionen zum anschauen, compose function auch verwenden
         self.unusable_transforms_dict = {
             tio.RandomAffine(degrees=(20), center="image"): 0.35,
             tio.RandomAffine(scales=(0.85, 0.85), center="image"): 0.35,
