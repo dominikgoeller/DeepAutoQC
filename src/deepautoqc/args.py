@@ -13,7 +13,7 @@ class config:
     DATA_PATH = Path(
         "/data/gpfs-1/users/goellerd_c/work/usable"  # path to data on hpc-cluster
     )
-    TEST_DATA_PATH = "./data/test_data"
+    # TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
     requires_grad = True
@@ -31,5 +31,5 @@ class config:
     """
     Paths for checkpoints
     """
-    EARLYSTOP_PATH = "./results/ResNet50/"  # path to save model
+    EARLYSTOP_PATH = "./ckpts/ResNet50/"  # path to save model
     MODEL_CKPT = "/Users/dominik/Downloads/ResNet50trueADAM.pt"  # Path to checkpoint to resume training or predict./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt

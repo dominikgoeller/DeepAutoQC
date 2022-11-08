@@ -68,7 +68,8 @@ def predict(model, svg_path: str):
     elif preds[0] == 0:
         classification = "unusable"
         prob = x[0][0]
-    prob = str(np.round(100 * prob, 2)) + "%"  # as float, ohne 100 multiplikation
+    # prob = str(np.round(100 * prob, 2)) + "%"  # as float, ohne 100 multiplikation
+    prob = np.round(prob, 4)
     sub_name = svg_path.split("/")[
         -1
     ]  # expects input to be */*/../sub-102008_skull_strip_report.svg
