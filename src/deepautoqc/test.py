@@ -9,13 +9,10 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from args import config
+from data import TestSkullstripDataset, generate_test_loader  # noqa: E402
 from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader
-
-sys.path.append("..", 0)
-
-from data import TestSkullstripDataset, generate_test_loader  # noqa: E402
 from utils import (  # noqa: E402
     create_skullstrip_list,
     device_preparation,
@@ -71,7 +68,7 @@ def predict(model, svg_path: str):
     elif preds[0] == 0:
         classification = "unusable"
         prob = x[0][0]
-    prob = str(np.round(100 * prob, 2)) + "%"
+    prob = str(np.round(100 * prob, 2)) + "%"  # as float, ohne 100 multiplikation
     sub_name = svg_path.split("/")[
         -1
     ]  # expects input to be */*/../sub-102008_skull_strip_report.svg
@@ -93,22 +90,10 @@ def predict(model, svg_path: str):
     # print(classification)
 
 
-def main(model_ckpt: Path, svg_path: str):  # test_data_path: Path,
-    # test_skullstrips = create_skullstrip_list(usable_dir=test_data_path)
-    # dataset = TestSkullstripDataset(skullstrips=test_skullstrips)
-
-    # test_loader = generate_test_loader(
-    #    dataset=dataset, batchsize=config.batch_size, num_workers=config.num_workers
-    # )
+def main(model_ckpt: Path, svg_path: str):
 
     model = load_model(model_filepath=model_ckpt)
     print(".. Finished loading model! ..")
-    # device, device_ids = device_preparation(n_gpus=config.n_gpus)
-    # model.to(device=device)
-    # if len(device_ids) > 1:
-    #    model = nn.DataParallel(module=model, device_ids=device_ids)
-    # model.to(device=device)
-    # test(model=model, test_l=test_loader, device=device)
     predict(model=model, svg_path=svg_path)
 
 
@@ -130,6 +115,4 @@ if __name__ == "__main__":
     required.add_argument("-i", "--input", help="Input path to svg file", required=True)
     args = parser.parse_args()
     svg_path = args.input
-    main(model_ckpt=config.DUMMY_MODEL_CKPT, svg_path=svg_path)
-
-    # main(test_data_path=config.TEST_DATA_PATH, model_ckpt=config.DUMMY_MODEL_CKPT)
+    main(model_ckpt=config.MODEL_CKPT, svg_path=svg_path)
