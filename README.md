@@ -41,7 +41,7 @@ DeepAutoQC/
 ## Usage
 The code in this project can be used by running either `train.py` script or `test.py` script within the command line.
 First of all, you should go to `args.py` and
-### for training
+## For Training
 * set the `DATA_PATH` constant to a folder only containing corresponding t1w.nii(.gz), mask.nii(.gz) files as this is required for a training run
 * specify the hyperparameters used in training.
 * set `EARLYSTOP_PATH` to your desired location where model_weights, optimizer_weights and more parameters will be saved
@@ -54,7 +54,7 @@ You can enable multiple GPUs for training by setting `n_gpus` in `args.py`. If `
 ## Resume Training
 -- not implemented fully --
 
-### for predictions
+## For Predictions
 * check the `ckpts/` folder and set `MODEL_CKPT` to your desired `*model.pt` which will be loaded for predictions
 
 Then, run `python3 test.py [-h] -i INPUT`. Remember `the following arguments are required: -i/--input` should contain the path to your svg file.
