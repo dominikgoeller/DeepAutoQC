@@ -137,10 +137,11 @@ def main(data_path: Path, which_optim: str):
         model = nn.DataParallel(module=model, device_ids=device_ids)
     model.to(device=device)
 
+    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     criterion = nn.CrossEntropyLoss().to(device=device)
     if which_optim == "SGD":
         optimizer = optim.SGD(
-            params=model.parameters(),
+            params=trainable_params,
             lr=config.lr,
             momentum=config.momentum,
             nesterov=True,
@@ -149,7 +150,7 @@ def main(data_path: Path, which_optim: str):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
     elif which_optim == "ADAM":
         optimizer = optim.Adam(
-            params=model.parameters(), lr=config.lr, betas=(0.9, 0.98), eps=1e-9
+            params=trainable_params, lr=config.lr, betas=(0.9, 0.98), eps=1e-9
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
 
