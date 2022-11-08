@@ -1,5 +1,6 @@
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -154,8 +155,24 @@ def main(data_path: Path, which_optim: str):
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
         scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
 
-    # scheduler!!
-    earlystopping = EarlyStopping(verbose=True)
+    # build save path for checkpoint
+    if config.requires_grad:
+        tag = "trainable"
+    elif not config.requires_grad:
+        tag = "frozen"
+    directory = Path(
+        config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d")
+    ).mkdir(parents=True, exist_ok=True)
+    ckpt_path = Path(
+        directory
+        + model.__class__.__name__
+        + "_"
+        + tag
+        + "_"
+        + optimizer.__class__.__name__
+        + ".pt"
+    )  # can be adapted to only model weights path
+    earlystopping = EarlyStopping(path=ckpt_path, verbose=True)
     train_validate(
         model=model,
         train_l=train_loader,

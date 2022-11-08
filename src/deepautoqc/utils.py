@@ -20,8 +20,8 @@ class EarlyStopping:
 
     def __init__(
         self,
-        path: Path = config.EARLYSTOP_PATH,
-        patience=7,
+        path: Path,
+        patience=config.patience,
         verbose=False,
         delta=0,
         trace_func=print,
@@ -29,7 +29,7 @@ class EarlyStopping:
         """
         Args:
             patience (int): How long to wait after last time validation loss improved.
-                            Default: 5
+                            Default: 7
             verbose (bool): If True, prints a message for each validation loss improvement.
                             Default: False
             delta (float): Minimum change in the monitored quantity to qualify as an improvement.

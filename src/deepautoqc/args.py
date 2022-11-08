@@ -27,8 +27,9 @@ class config:
     lr = 1e-3
     momentum = 0.9
     optimizer = "SGD"  # or "ADAM"
+    patience = 7  # patience for early stopping
     """
     Paths for checkpoints
     """
-    EARLYSTOP_PATH = "/data/gpfs-1/users/goellerd_c/work/saved_models/ResNet50trueSGD.pt"  # path to save model on hpc-cluster
-    MODEL_CKPT = "/Users/dominik/Downloads/ResNet50trueADAM.pt"  # ./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
+    EARLYSTOP_PATH = "./results/ResNet50/"  # path to save model
+    MODEL_CKPT = "/Users/dominik/Downloads/ResNet50trueADAM.pt"  # Path to checkpoint to resume training or predict./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
