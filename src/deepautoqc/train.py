@@ -136,13 +136,13 @@ def main(data_path: Path, which_optim: str, resume_path: str):
 
     model = resnet50()
 
-    if resume_path is not None:
-        model, _ = resume_training(model_filepath=resume_path, model=model)
-
     device, device_ids = device_preparation(n_gpus=config.n_gpus)
     model.to(device=device)
     if len(device_ids) > 1:
         model = nn.DataParallel(module=model, device_ids=device_ids)
+
+    if resume_path is not None:
+        model, _ = resume_training(model_filepath=resume_path, model=model)
     model.to(device=device)
 
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
