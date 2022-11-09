@@ -52,7 +52,8 @@ Then, run `python3 train.py` to start your training process. The progress is log
 You can enable multiple GPUs for training by setting `n_gpus` in `args.py`. If `n_gpus` is set to a value not available on your machine the function `device_preparation` will set `torch.device` to either `"cpu"` or `"cuda"` using all available GPUs.
 
 ## Resume Training
--- not implemented fully --
+You can resume training from a previously saved checkpoint by:
+`python train.py -r ckpt/path`
 
 ## For Predictions
 * check the `ckpts/` folder and set `MODEL_CKPT` to your desired `*model.pt` which will be loaded for predictions
