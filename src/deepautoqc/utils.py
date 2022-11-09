@@ -184,7 +184,7 @@ def resume_training(model_filepath: Path, model):
     return model, optimizer
 
 
-def build_save_path(model: ResNet, optimizer: Optimizer):
+def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
     if config.requires_grad:
         tag = "trainable"
     elif not config.requires_grad:
@@ -193,12 +193,12 @@ def build_save_path(model: ResNet, optimizer: Optimizer):
     directory.mkdir(parents=True, exist_ok=True)
     # general = model.__class__.__name__ + "_" + tag + "_" + optimizer.__class__.__name__ + ".pt"
     ckpt_path = Path(
-        directory
-        / model.__class__.__name__
-        / "_"
-        / tag
-        / "_"
-        / optimizer.__class__.__name__
-        / ".pt"
+        str(directory)
+        + model.__class__.__name__
+        + "_"
+        + tag
+        + "_"
+        + optimizer.__class__.__name__
+        + ".pt"
     )
     return ckpt_path
