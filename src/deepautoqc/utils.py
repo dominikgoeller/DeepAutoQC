@@ -9,6 +9,8 @@ from args import config
 from halfpipe.file_index.bids import BIDSIndex
 from models import resnet50
 from torch import nn
+from torch.optim import Optimizer
+from torchvision.models import ResNet
 
 
 class EarlyStopping:
@@ -182,7 +184,7 @@ def resume_training(model_filepath: Path, model):
     return model, optimizer
 
 
-def build_save_path(model, optimizer):
+def build_save_path(model: ResNet, optimizer: Optimizer):
     if config.requires_grad:
         tag = "trainable"
     elif not config.requires_grad:
