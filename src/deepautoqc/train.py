@@ -1,3 +1,4 @@
+import argparse
 import sys
 import time
 from datetime import datetime
@@ -15,10 +16,12 @@ from torchvision import models
 from tqdm import tqdm
 from utils import (  # noqa: E402
     EarlyStopping,
+    build_save_path,
     create_skullstrip_list,
     device_preparation,
     epoch_time,
     reproducibility,
+    resume_training,
 )
 
 
@@ -120,7 +123,7 @@ def train_validate(
             break
 
 
-def main(data_path: Path, which_optim: str):
+def main(data_path: Path, which_optim: str, resume_path: str):
     reproducibility()
     skullstrip_list = create_skullstrip_list(usable_dir=data_path)
     dataset = SkullstripDataset(skullstrips=skullstrip_list)
@@ -130,7 +133,11 @@ def main(data_path: Path, which_optim: str):
         seed=config.SEED,
         num_workers=config.num_workers,
     )
+
     model = resnet50()
+
+    if resume_path is not None:
+        model, _ = resume_training(model_filepath=resume_path, model=model)
 
     device, device_ids = device_preparation(n_gpus=config.n_gpus)
     model.to(device=device)
@@ -148,31 +155,19 @@ def main(data_path: Path, which_optim: str):
             nesterov=True,
             weight_decay=1e-4,
         )
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
+        # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
     elif which_optim == "ADAM":
         optimizer = optim.Adam(
             params=trainable_params, lr=config.lr, betas=(0.9, 0.98), eps=1e-9
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
-        scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
+
+    optimizer = _  # from line 140 to 142
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
 
     # build save path for checkpoint
-    if config.requires_grad:
-        tag = "trainable"
-    elif not config.requires_grad:
-        tag = "frozen"
-    directory = Path(
-        config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d")
-    ).mkdir(parents=True, exist_ok=True)
-    ckpt_path = Path(
-        directory
-        + model.__class__.__name__
-        + "_"
-        + tag
-        + "_"
-        + optimizer.__class__.__name__
-        + ".pt"
-    )  # can be adapted to only model weights path
+    ckpt_path = build_save_path(model=model, optimizer=optimizer)
     earlystopping = EarlyStopping(path=ckpt_path, verbose=True)
+
     train_validate(
         model=model,
         train_l=train_loader,
@@ -186,4 +181,18 @@ def main(data_path: Path, which_optim: str):
 
 
 if __name__ == "__main__":
-    main(data_path=config.DATA_PATH, which_optim=config.optimizer)
+    parser = argparse.ArgumentParser(description="Training Script")
+    parser.add_argument(
+        "-r",
+        "--resume",
+        default=None,
+        type=str,
+        help="path to latest checkpoint (default: None)",
+    )
+    args = parser.parse_args()
+    resume_path = args.resume
+    main(
+        data_path=config.DATA_PATH,
+        which_optim=config.optimizer,
+        resume_path=resume_path,
+    )

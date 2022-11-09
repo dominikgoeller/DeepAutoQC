@@ -165,13 +165,13 @@ def load_model(model_filepath: Path):
     return model
 
 
-def resume_training(model_filepath: Path):
+def resume_training(model_filepath: Path, model):
     if torch.cuda.is_available():
         ckpt = torch.load(model_filepath)
     ckpt = torch.load(
         model_filepath, map_location=torch.device("cpu")
     )  # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
-    model = ckpt["model"]
+    # model = ckpt["model"]
     # model = nn.DataParallel(
     #    resnet50()
     # )  # wrap resnet50 model with nn.DataParallel to not get missing_keys error!
@@ -179,4 +179,24 @@ def resume_training(model_filepath: Path):
     model.load_state_dict(ckpt["model_state_dict"])
     optimizer.load_state_dict(ckpt["optimizer_state_dict"])
     model.train()
-    return model
+    return model, optimizer
+
+
+def build_save_path(model, optimizer):
+    if config.requires_grad:
+        tag = "trainable"
+    elif not config.requires_grad:
+        tag = "frozen"
+    directory = Path(
+        config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d")
+    ).mkdir(parents=True, exist_ok=True)
+    ckpt_path = Path(
+        directory
+        + model.__class__.__name__
+        + "_"
+        + tag
+        + "_"
+        + optimizer.__class__.__name__
+        + ".pt"
+    )
+    return ckpt_path
