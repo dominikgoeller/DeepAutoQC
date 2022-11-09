@@ -189,9 +189,8 @@ def build_save_path(model: ResNet, optimizer: Optimizer):
         tag = "trainable"
     elif not config.requires_grad:
         tag = "frozen"
-    directory = Path(
-        config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d")
-    ).mkdir(parents=True, exist_ok=True)
+    directory = Path(config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d"))
+    directory.mkdir(parents=True, exist_ok=True)
     ckpt_path = Path(
         directory
         + model.__class__.__name__
