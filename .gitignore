@@ -21,8 +21,8 @@
 */.ipynb_checkpoints/
 *.iml
 src/deepautoqc/ckpts/ResNet50/EarlyStopcheckpoint2510.pt
-src/deepautoqc/predictions
-src/DeepAutoQC.egg-info
+src/deepautoqc/predictions/
+src/*.egg-info/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
