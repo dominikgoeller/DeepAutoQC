@@ -90,7 +90,7 @@ def to_image(t1w, mask_path):
     plot_params = dict(colors=None)
 
     # image_nii: nib.Nifti1Image = nib.load(t1w_path)
-    image_nii = t1w
+    image_nii: nib.Nifti1Image = t1w
     seg_nii: nib.Nifti1Image = nib.load(mask_path)
 
     canonical_r = rotation2canonical(image_nii)

@@ -7,6 +7,7 @@ import torchio as tio
 from ni_image_helpers import to_image
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision import transforms, utils
+from transforms import transforms_cfg
 from utils import reproducibility
 
 
@@ -52,7 +53,8 @@ class SkullstripDataset(Dataset):
                 tio.OneOf(self.usable_transforms_dict),
             ]
         )
-        self.transform = [self.usable_transform, self.unusable_transform]
+        # self.transform = [self.usable_transform, self.unusable_transform]
+        self.transform = [transforms_cfg.good_transforms, transforms_cfg.bad_transforms]
         # self.mean = (0.485, 0.456, 0.406)
         # self.std = (0.229, 0.224, 0.225)
         # self.mean = (-1.3088, -1.2221, -0.9920) calculated on 315 training samples
