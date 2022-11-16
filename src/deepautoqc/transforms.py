@@ -74,9 +74,19 @@ class transforms_cfg:
 
 
 ## functions nach diesem Muster definieren?
-def motion(cfg: dict):
+trf_cfg = {
+    "motion": {
+        "degrees": 20,
+        "translation": 20,
+        "num_transforms": 3,
+    },
+    "ghosting": {},
+}
+
+
+def motion(cfg: dict = trf_cfg):
     return tio.RandomMotion(
-        degrees=cfg["degrees"],
-        translation=cfg["translation"],
-        num_transforms=cfg["num_transforms"],
+        degrees=cfg["motion"]["degrees"],
+        translation=cfg["motion"]["translation"],
+        num_transforms=cfg["motion"]["num_transforms"],
     )
