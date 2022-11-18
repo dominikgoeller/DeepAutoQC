@@ -1,3 +1,5 @@
+from dataclasses import dataclass, field
+
 import nibabel as nib
 import torchio as tio
 
@@ -24,7 +26,7 @@ class BaseBrain:
 class SubBrain(BaseBrain):
     # transforms dict?
     def __init__(self, *args, **kwargs):
-        super(SubBrain, self).__init__(*args, **kwargs)
+        # super(SubBrain, self).__init__(*args, **kwargs)
         self.sub_t1w = None  # self.t1w
         self.sub_mask = None  # self.mask
 
@@ -74,19 +76,69 @@ class transforms_cfg:
 
 
 ## functions nach diesem Muster definieren?
-trf_cfg = {
-    "motion": {
-        "degrees": 20,
-        "translation": 20,
-        "num_transforms": 3,
-    },
-    "ghosting": {},
-}
+@dataclass
+class trf_cfg:
+    motion: dict = field(
+        default_factory=lambda: {
+            "degrees": 20,
+            "translation": 20,
+            "num_transforms": 3,
+        }
+    )
+    ghosting: dict = field(
+        default_factory=lambda: {
+            "num_ghosts": (4, 10),
+            "axes": ("AP", "lr"),
+            "intensity": (0.1, 0.3),
+            "restore": 0.05,
+        }
+    )
+    spike: dict = field(
+        default_factory=lambda: {
+            "num_spikes": 3,
+            "intensity": (1, 3),
+        }
+    )
+    affine: dict = field(
+        default_factory=lambda: {
+            "degrees": 20,
+            "center": "image",
+        }
+    )
+    rescale: dict = field(default_factory=lambda: {"out_min_max": (0, 1)})
 
 
-def motion(cfg: dict = trf_cfg):
+def motion(cfg=trf_cfg()):
     return tio.RandomMotion(
-        degrees=cfg["motion"]["degrees"],
-        translation=cfg["motion"]["translation"],
-        num_transforms=cfg["motion"]["num_transforms"],
+        degrees=cfg.motion.get("degrees"),
+        translation=cfg.motion.get("translation"),
+        num_transforms=cfg.motion.get("num_transforms"),
+    )
+
+
+def ghosting(cfg=trf_cfg()):
+    return tio.RandomGhosting(
+        num_ghosts=cfg.ghosting.get("num_ghosts"),
+        axes=cfg.ghosting.get("axes"),
+        intensity=cfg.ghosting.get("intensity"),
+        restore=cfg.ghosting.get("restore"),
+    )
+
+
+def spike(cfg=trf_cfg()):
+    return tio.RandomSpike(
+        num_spikes=cfg.spike.get("num_spikes"), intensity=cfg.spike.get("intensity")
+    )
+
+
+def affine(cfg=trf_cfg()):
+    return tio.RandomAffine(
+        degrees=cfg.affine.get("degrees"),
+        center=cfg.affine.get("center"),
+    )
+
+
+def rescale(cfg=trf_cfg()):
+    return tio.RescaleIntensity(
+        out_min_max=cfg.rescale.get("out_min_max"),
     )
