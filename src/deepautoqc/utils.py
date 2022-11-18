@@ -1,3 +1,4 @@
+import os
 import random
 import sys
 from datetime import datetime
@@ -185,20 +186,25 @@ def resume_training(model_filepath: Path, model):
 
 
 def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
+    """Create folder of current date if not already exists and save modelweights to it
+
+    Args:
+        optimizer: Optimizer used in training
+        model: Model used in training
+    """
     if config.requires_grad:
         tag = "trainable"
     elif not config.requires_grad:
         tag = "frozen"
     directory = Path(config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d"))
     directory.mkdir(parents=True, exist_ok=True)
-    # general = model.__class__.__name__ + "_" + tag + "_" + optimizer.__class__.__name__ + ".pt"
-    ckpt_path = Path(
-        str(directory)
-        + model.__class__.__name__
+    file_name = Path(
+        +model.__class__.__name__
         + "_"
         + tag
         + "_"
         + optimizer.__class__.__name__
         + ".pt"
     )
+    ckpt_path = os.path.join(directory, file_name)
     return ckpt_path

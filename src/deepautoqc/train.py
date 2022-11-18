@@ -165,7 +165,7 @@ def main(data_path: Path, which_optim: str, resume_path: str):
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
 
     # build save path for checkpoint
-    ckpt_path = build_save_path(optimizer=optimizer)
+    ckpt_path = build_save_path(optimizer=optimizer, model=model)
     earlystopping = EarlyStopping(path=ckpt_path, verbose=True)
 
     train_validate(
