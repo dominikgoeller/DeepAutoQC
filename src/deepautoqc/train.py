@@ -135,18 +135,8 @@ def main(data_path: Path, which_optim: str, resume_path: str):
     )
 
     model = resnet50()
-
-    device, device_ids = device_preparation(n_gpus=config.n_gpus)
-    model.to(device=device)
-    if len(device_ids) > 1:
-        model = nn.DataParallel(module=model, device_ids=device_ids)
-
-    if resume_path is not None:
-        model, _ = resume_training(model_filepath=resume_path, model=model)
-    model.to(device=device)
-
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    criterion = nn.CrossEntropyLoss().to(device=device)
+
     if which_optim == "SGD":
         optimizer = optim.SGD(
             params=trainable_params,
@@ -161,9 +151,16 @@ def main(data_path: Path, which_optim: str, resume_path: str):
             params=trainable_params, lr=config.lr, betas=(0.9, 0.98), eps=1e-9
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
 
-    optimizer = _  # from line 140 to 142
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
+    if resume_path is not None:
+        model, optimizer = resume_training(model_filepath=resume_path, model=model)
 
+    device, device_ids = device_preparation(n_gpus=config.n_gpus)
+    model.to(device=device)
+    if len(device_ids) > 1:
+        model = nn.DataParallel(module=model, device_ids=device_ids)
+
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
+    criterion = nn.CrossEntropyLoss().to(device=device)
     # build save path for checkpoint
     ckpt_path = build_save_path(optimizer=optimizer, model=model)
     earlystopping = EarlyStopping(path=ckpt_path, verbose=True)
