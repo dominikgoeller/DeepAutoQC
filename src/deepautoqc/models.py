@@ -1,7 +1,12 @@
+from pathlib import Path
+
+import torch
 from args import config
 from torch import nn
 from torchvision import models
 from torchvision.models import ResNet50_Weights
+
+DEFAULT_WEIGHTS = Path("src/deepautoqc/weights/resnet50-DEFAULT.pth")
 
 
 def resnet50(requires_grad: bool = config.requires_grad):
@@ -10,7 +15,9 @@ def resnet50(requires_grad: bool = config.requires_grad):
     Args:
         requires_grad = Boolean which determines if params should be frozen or not
     """
-    model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
+    # model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
+    model = models.resnet50()
+    model.load_state_dict(torch.load(DEFAULT_WEIGHTS))
     if not requires_grad:  # if set to false freeze params
         for param in model.parameters():
             param.requires_grad = False
