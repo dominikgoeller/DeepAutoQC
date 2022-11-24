@@ -7,7 +7,6 @@ DeepAutoQC aims to assist researchers in classifying skull strip reports as eith
 DeepAutoQC/
 |
 |--- src/
-|   |--- DeepAutoQC.egg-info - package info
 |   |--- deepautoqc/
 |
 |       |--- ckpts/ - folder containing checkpoints of saved models
