@@ -13,11 +13,7 @@ class BaseBrain(ABC):
         self.mask = transform_data().get_base_transform()(mask)
 
     @abstractmethod
-    def compose_bad():
-        pass
-
-    @abstractmethod
-    def compose_good():
+    def compose():
         pass
 
 
@@ -25,7 +21,7 @@ class badBrain(BaseBrain):
     def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
         super().__init__(t1w, mask)
 
-    def compose_bad():
+    def compose():
         """Here we want to apply bad transformations to our t1w or mask or both
         we differentiate between scanner artefacts and articial artefacts that only transform to our mask aka red outline
         We want to have many different composed transforms available so we can randomly choose one of them with tio.OneOf() for our data augmentation inside the
@@ -38,7 +34,7 @@ class goodBrain(BaseBrain):
     def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
         super().__init__(t1w, mask)
 
-    def compose_good():
+    def compose():
         """See above for documentation at compose_bad()"""
         pass
 
