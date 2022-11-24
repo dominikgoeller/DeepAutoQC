@@ -21,7 +21,7 @@ class BaseBrain(ABC):
         pass
 
 
-class subBrain(BaseBrain):
+class badBrain(BaseBrain):
     def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
         super().__init__(t1w, mask)
 
@@ -33,7 +33,13 @@ class subBrain(BaseBrain):
         """
         pass
 
+
+class goodBrain(BaseBrain):
+    def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
+        super().__init__(t1w, mask)
+
     def compose_good():
+        """See above for documentation at compose_bad()"""
         pass
 
 
