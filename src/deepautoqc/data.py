@@ -98,7 +98,7 @@ class SkullstripDataset(Dataset):
             new_label = 1
 
         # image: np.ndarray = to_image(t1w=new_t1w, mask_path=sample[1])
-        image: np.ndarray = to_image(t1w=t1w, mask_path=mask)
+        image: np.ndarray = to_image(t1w=t1w, mask=mask)
         image = image.transpose((2, 0, 1))
         image = torch.from_numpy(image).float() / 255
         # normalize = transforms.Normalize(mean=self.mean, std=self.std)
