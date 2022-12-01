@@ -34,7 +34,7 @@ class BadScannerBrain(BaseBrain):
         transf = transform_data().get_bad_scanner_transform()
         # transf = tio.OneOf(transforms=transform_data().bad_scanner_dict())
         t1w = transf(self.t1w)
-        mask = transf(self.mask)
+        mask = self.mask
         return t1w, mask
 
 
@@ -45,7 +45,7 @@ class BadSyntheticBrain(BaseBrain):
         super().__init__(t1w, mask)
 
     def apply(self):
-        transf = transform_data().get_bad_syn_transform()
+        transf = transform_data().get_bad_synthetic_transform()
         t1w = self.t1w
         mask = transf(self.mask)
         return t1w, mask
@@ -60,7 +60,7 @@ class GoodScannerBrain(BaseBrain):
     def apply(self):
         transf = transform_data().get_good_scanner_transform()
         t1w = transf(self.t1w)
-        mask = transf(self.mask)
+        mask = self.mask
         return t1w, mask
 
 
@@ -82,27 +82,28 @@ class transform_data:
     motion: dict = field(
         default_factory=lambda: {
             "degrees": 20,
-            "translation": 20,
+            "translation": 30,
             "num_transforms": 3,
         }
     )
     ghosting: dict = field(
         default_factory=lambda: {
-            "num_ghosts": (4, 10),
-            "axes": ("AP", "lr"),
-            "intensity": (0.1, 0.3),
+            "num_ghosts": (2, 5),
+            # "axes": (0,1),
+            "intensity": (0.5, 1),
             "restore": 0.05,
         }
     )
     spike: dict = field(
         default_factory=lambda: {
-            "num_spikes": 3,
-            "intensity": (1, 3),
+            "num_spikes": (1, 1),
+            "intensity": (0.6, 0.9),
         }
     )
     affine: dict = field(
         default_factory=lambda: {
-            "degrees": 20,
+            "degrees": 5,
+            "scales": (1, 1.2),
             "center": "image",
         }
     )
@@ -116,10 +117,28 @@ class transform_data:
     )
     swap: dict = field(
         default_factory=lambda: {
-            "patch_size": 15,
+            "patch_size": 10,
             "num_iterations": 40,
         }
     )
+    noise: dict = field(
+        default_factory=lambda: {
+            "mean": 0,
+            "std": (0, 15),
+        }
+    )
+    blur: dict = field(default_factory=lambda: {"std": (0, 0.3)})
+
+    def get_blur(self):
+        return tio.RandomBlur(
+            std=self.blur.get("std"),
+        )
+
+    def get_noise(self):
+        return tio.RandomNoise(
+            mean=self.noise.get("mean"),
+            std=self.noise.get("std"),
+        )
 
     def get_motion(self):
         return tio.RandomMotion(
@@ -131,7 +150,7 @@ class transform_data:
     def get_ghosting(self):
         return tio.RandomGhosting(
             num_ghosts=self.ghosting.get("num_ghosts"),
-            axes=self.ghosting.get("axes"),
+            # axes=self.ghosting.get("axes"),
             intensity=self.ghosting.get("intensity"),
             restore=self.ghosting.get("restore"),
         )
@@ -145,6 +164,7 @@ class transform_data:
     def get_affine(self):
         return tio.RandomAffine(
             degrees=self.affine.get("degrees"),
+            scales=self.affine.get("scales"),
             center=self.affine.get("center"),
         )
 
@@ -189,17 +209,14 @@ class transform_data:
             ): 1,
             tio.Compose(
                 [
-                    self.get_motion(),
                     self.get_ghosting(),
-                    self.get_spike(),
+                    self.get_swap(),
                 ]
             ): 1,
             tio.Compose(
                 [
-                    self.get_motion(),
-                    self.get_ghosting(),
                     self.get_spike(),
-                    self.get_swap(),
+                    self.get_ghosting(),
                 ]
             ): 1,
         }
@@ -212,7 +229,16 @@ class transform_data:
         to one. If a sequence is given, the same probability will be
         assigned to each transform."""
         b_syn_dict: dict = {
-            tio.Compose([self.get_affine()]),
+            self.get_affine(): 1,
+            transform_data(
+                affine={"degrees": 5, "scales": (1, 1.3), "center": "image"}
+            ).get_affine(): 1,
+            transform_data(
+                affine={"degrees": 5, "scales": (0.8, 1), "center": "image"}
+            ).get_affine(): 1,
+            transform_data(
+                affine={"degrees": 5, "scales": (0.7, 1), "center": "image"}
+            ).get_affine(): 1,
         }
         return b_syn_dict
 
@@ -222,7 +248,20 @@ class transform_data:
         probabilities as values. Probabilities are normalized so they sum
         to one. If a sequence is given, the same probability will be
         assigned to each transform."""
-        g_syn_dict: dict = {}
+        g_syn_dict: dict = {
+            transform_data(
+                affine={"degrees": 5, "scales": (1, 1.02), "center": "image"}
+            ).get_affine(): 1,
+            transform_data(
+                affine={"degrees": 5, "scales": (1, 1.05), "center": "image"}
+            ).get_affine(): 1,
+            transform_data(
+                affine={"degrees": 5, "scales": (0.95, 1), "center": "image"}
+            ).get_affine(): 1,
+            transform_data(
+                affine={"degrees": 5, "scales": (0.98, 1), "center": "image"}
+            ).get_affine(): 1,
+        }
         return g_syn_dict
 
     def good_scanner_dict(self):
@@ -231,7 +270,56 @@ class transform_data:
         probabilities as values. Probabilities are normalized so they sum
         to one. If a sequence is given, the same probability will be
         assigned to each transform."""
-        g_scan_dict: dict = {}
+        g_scan_dict: dict = {
+            tio.Compose(
+                [
+                    transform_data(
+                        spike={"num_spikes": (1, 1), "intensity": (0, 0.25)}
+                    ).get_spike(),
+                    transform_data(
+                        ghosting={
+                            "num_ghosts": (1, 1),
+                            "intensity": (0, 0.25),
+                            "restore": 0.5,
+                        }
+                    ).get_ghosting(),
+                    self.get_blur(),
+                    self.get_noise(),
+                ]
+            ): 1,
+            tio.Compose(
+                [
+                    transform_data(
+                        spike={"num_spikes": (1, 1), "intensity": (0, 0.5)}
+                    ).get_spike(),
+                    transform_data(
+                        ghosting={
+                            "num_ghosts": (1, 1),
+                            "intensity": (0, 0.5),
+                            "restore": 0.5,
+                        }
+                    ).get_ghosting(),
+                    transform_data(blur={"std": (0, 0.5)}).get_blur(),
+                    transform_data(noise={"mean": 0, "std": (0, 0.3)}).get_noise(),
+                ]
+            ): 1,
+            tio.Compose(
+                [
+                    transform_data(
+                        spike={"num_spikes": (1, 1), "intensity": (0, 0.7)}
+                    ).get_spike(),
+                    transform_data(
+                        ghosting={
+                            "num_ghosts": (1, 1),
+                            "intensity": (0, 0.7),
+                            "restore": 0.5,
+                        }
+                    ).get_ghosting(),
+                    transform_data(blur={"std": (0, 0.5)}).get_blur(),
+                    transform_data(noise={"mean": 0, "std": (0, 0.3)}).get_noise(),
+                ]
+            ): 1,
+        }
         return g_scan_dict
 
     def get_bad_scanner_transform(self):
