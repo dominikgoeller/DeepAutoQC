@@ -6,7 +6,7 @@ from torch import nn
 from torchvision import models
 from torchvision.models import ResNet50_Weights
 
-DEFAULT_WEIGHTS = Path("src/deepautoqc/weights/resnet50-DEFAULT.pth")
+DEFAULT_WEIGHTS = Path("..weights/resnet50-DEFAULT.pth")
 
 
 def resnet50(requires_grad: bool = config.requires_grad):
