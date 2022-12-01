@@ -85,13 +85,14 @@ def to_rgb(display):
     return image
 
 
-# since we nib.load(t1wpath) already in our dataset we can redefine this function (substitute t1w_path for t1w)
-def to_image(t1w, mask_path):
+# since we nib.load(t1wpath) and nib.load(mask) already in our dataset we can redefine this function (substitute t1w_path for t1w)
+def to_image(t1w, mask):
     plot_params = dict(colors=None)
 
     # image_nii: nib.Nifti1Image = nib.load(t1w_path)
     image_nii: nib.Nifti1Image = t1w
-    seg_nii: nib.Nifti1Image = nib.load(mask_path)
+    # seg_nii: nib.Nifti1Image = nib.load(mask_path)
+    seg_nii: nib.Nifti1Image = mask
 
     canonical_r = rotation2canonical(image_nii)
     image_nii = rotate_affine(image_nii, rot=canonical_r)

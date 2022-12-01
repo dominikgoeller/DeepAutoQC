@@ -9,8 +9,12 @@ class BaseBrain(ABC):
     """Generate "new" human brain as a base class for our data augmentation."""
 
     def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
-        self.t1w = transform_data().get_base_transform()(t1w)
-        self.mask = transform_data().get_base_transform()(mask)
+        self.t1w = transform_data().get_base_transform()(
+            nib.load(t1w)
+        )  # load t1w from path
+        self.mask = transform_data().get_base_transform()(
+            nib.load(mask)
+        )  # load mask from path
 
     # @abstractmethod
     # def compose():
@@ -20,35 +24,57 @@ class BaseBrain(ABC):
         pass
 
 
-class badBrain(BaseBrain):
+class BadScannerBrain(BaseBrain):
+    """Apply label changing transforms on both t1w and mask."""
+
     def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
         super().__init__(t1w, mask)
-        self.t1w = t1w  # we want to have the t1w with the applied changes from super()
-        self.mask = (
-            mask  # we want to have the mask with the applied changes from super()
-        )
 
-    # def compose(self):
-    #    """Here we want to apply bad transformations to our t1w or mask or both
-    #    we differentiate between scanner artefacts and articial artefacts that only transform to our mask aka red outline
-    #    We want to have many different composed transforms available so we can randomly choose one of them with tio.OneOf() for our data augmentation inside the
-    #    dataset for the training process.
-    #    """
-    #    return transform_data().choose_bad_transform()
     def apply(self):
-        transf = transform_data().choose_bad_transform()
+        transf = transform_data().get_bad_scanner_transform()
+        # transf = tio.OneOf(transforms=transform_data().bad_scanner_dict())
         t1w = transf(self.t1w)
         mask = transf(self.mask)
         return t1w, mask
 
 
-class goodBrain(BaseBrain):
+class BadSyntheticBrain(BaseBrain):
+    """Synthetic label changing transforms which are only applied to the mask"""
+
     def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
         super().__init__(t1w, mask)
 
-    def compose(self):
-        """See above for documentation at compose_bad()"""
-        pass
+    def apply(self):
+        transf = transform_data().get_bad_syn_transform()
+        t1w = self.t1w
+        mask = transf(self.mask)
+        return t1w, mask
+
+
+class GoodScannerBrain(BaseBrain):
+    """Non-label changing class that mirrors the label-changing scanner transforms up to a certain degree"""
+
+    def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
+        super().__init__(t1w, mask)
+
+    def apply(self):
+        transf = transform_data().get_good_scanner_transform()
+        t1w = transf(self.t1w)
+        mask = transf(self.mask)
+        return t1w, mask
+
+
+class GoodSyntheticBrain(BaseBrain):
+    """Non-label changing class that mirrors the label-changing synthetic transforms up to a certain degree"""
+
+    def __init__(self, t1w: nib.Nifti1Image, mask: nib.Nifti1Image):
+        super().__init__(t1w, mask)
+
+    def apply(self):
+        transf = transform_data().get_good_synthetic_transform()
+        t1w = self.t1w
+        mask = transf(self.mask)
+        return t1w, mask
 
 
 @dataclass
@@ -143,7 +169,7 @@ class transform_data:
     def get_base_transform(self):
         return tio.Compose(
             [
-                tio.ToCanonical(),
+                tio.ToCanonical(),  # not needed??
                 self.get_elastic(),
             ]
         )
@@ -154,20 +180,20 @@ class transform_data:
         probabilities as values. Probabilities are normalized so they sum
         to one. If a sequence is given, the same probability will be
         assigned to each transform."""
-        bad_scanner_dict: dict = {
+        b_scan_dict: dict = {
             tio.Compose(
                 [
                     self.get_motion(),
                     self.get_ghosting(),
                 ]
-            ),
+            ): 1,
             tio.Compose(
                 [
                     self.get_motion(),
                     self.get_ghosting(),
                     self.get_spike(),
                 ]
-            ),
+            ): 1,
             tio.Compose(
                 [
                     self.get_motion(),
@@ -175,9 +201,9 @@ class transform_data:
                     self.get_spike(),
                     self.get_swap(),
                 ]
-            ),
+            ): 1,
         }
-        return bad_scanner_dict
+        return b_scan_dict
 
     def bad_synthetic_dict(self):
         """Dictionary with instances of
@@ -185,68 +211,61 @@ class transform_data:
         probabilities as values. Probabilities are normalized so they sum
         to one. If a sequence is given, the same probability will be
         assigned to each transform."""
-        bad_synthetic_dict: dict = {
+        b_syn_dict: dict = {
             tio.Compose([self.get_affine()]),
         }
-        return bad_synthetic_dict
+        return b_syn_dict
 
-    def choose_bad_transform(self):
-        bad_transform = tio.Compose(
+    def good_synthetic_dict(self):
+        """Dictionary with instances of
+        :class:`~torchio.transforms.Transform` as keys and
+        probabilities as values. Probabilities are normalized so they sum
+        to one. If a sequence is given, the same probability will be
+        assigned to each transform."""
+        g_syn_dict: dict = {}
+        return g_syn_dict
+
+    def good_scanner_dict(self):
+        """Dictionary with instances of
+        :class:`~torchio.transforms.Transform` as keys and
+        probabilities as values. Probabilities are normalized so they sum
+        to one. If a sequence is given, the same probability will be
+        assigned to each transform."""
+        g_scan_dict: dict = {}
+        return g_scan_dict
+
+    def get_bad_scanner_transform(self):
+        transf = tio.Compose(
             [
-                tio.OneOf(
-                    tio.OneOf(self.bad_scanner_dict()),
-                    tio.OneOf(self.bad_synthetic_dict()),
-                ),  # PROBLEM! we want to apply synthetic transforms only on mask and not t1w which is currently not the case!
+                tio.OneOf(self.bad_scanner_dict()),
                 self.get_rescale(),
             ]
         )
-        return bad_transform
+        return transf
 
+    def get_bad_synthetic_transform(self):
+        transf = tio.Compose(
+            [
+                tio.OneOf(self.bad_synthetic_dict()),
+                self.get_rescale(),
+            ]
+        )
+        return transf
 
-# def motion(cfg=trf_cfg()):
-#    return tio.RandomMotion(
-#        degrees=cfg.motion.get("degrees"),
-#        translation=cfg.motion.get("translation"),
-#        num_transforms=cfg.motion.get("num_transforms"),
-#    )
-#
-#
-# def ghosting(cfg=trf_cfg()):
-#    return tio.RandomGhosting(
-#        num_ghosts=cfg.ghosting.get("num_ghosts"),
-#        axes=cfg.ghosting.get("axes"),
-#        intensity=cfg.ghosting.get("intensity"),
-#        restore=cfg.ghosting.get("restore"),
-#    )
-#
-#
-# def spike(cfg=trf_cfg()):
-#    return tio.RandomSpike(
-#        num_spikes=cfg.spike.get("num_spikes"), intensity=cfg.spike.get("intensity")
-#    )
+    def get_good_scanner_transform(self):
+        transf = tio.Compose(
+            [
+                tio.OneOf(self.good_scanner_dict()),
+                self.get_rescale(),
+            ]
+        )
+        return transf
 
-
-# def affine(cfg=trf_cfg()):
-#    return tio.RandomAffine(
-#        degrees=cfg.affine.get("degrees"),
-#        center=cfg.affine.get("center"),
-#    )
-#
-#
-# def rescale(cfg=trf_cfg()):
-#    return tio.RescaleIntensity(
-#        out_min_max=cfg.rescale.get("out_min_max"),
-#    )
-#
-# def elastic(cfg=trf_cfg()):
-#    return tio.RandomElasticDeformation(
-#        num_control_points=cfg.elastic.get("num_control_points"),
-#        max_displacement=cfg.elastic.get("max_displacement"),
-#        locked_borders=cfg.elastic.get("locked_borders"),
-#    )
-
-"""Demonstration of overriding dicts from our dataclass"""
-x = transform_data(
-    motion={"degrees": 50, "translation": 50, "num_transforms": 7},
-)  #
-y = x.get_affine()
+    def get_good_synthetic_transform(self):
+        transf = tio.Compose(
+            [
+                tio.OneOf(self.good_synthetic_dict()),
+                self.get_rescale(),
+            ]
+        )
+        return transf
