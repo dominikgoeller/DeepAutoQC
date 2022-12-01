@@ -206,13 +206,6 @@ def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
         tag = "frozen"
     directory = Path(config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d"))
     directory.mkdir(parents=True, exist_ok=True)
-    file_name = Path(
-        +model.__class__.__name__
-        + "_"
-        + tag
-        + "_"
-        + optimizer.__class__.__name__
-        + ".pt"
-    )
+    file_name = Path(+"ResNet" + "_" + tag + "_" + optimizer.__class__.__name__ + ".pt")
     ckpt_path = os.path.join(directory, file_name)
     return ckpt_path
