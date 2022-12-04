@@ -88,15 +88,15 @@ class transform_data:
     )
     ghosting: dict = field(
         default_factory=lambda: {
-            "num_ghosts": (2, 5),
+            "num_ghosts": (3, 6),
             # "axes": (0,1),
-            "intensity": (0.5, 1),
+            "intensity": (1, 2.5),
             "restore": 0.05,
         }
     )
     spike: dict = field(
         default_factory=lambda: {
-            "num_spikes": (1, 1),
+            "num_spikes": (1, 4),
             "intensity": (0.6, 0.9),
         }
     )
@@ -231,13 +231,13 @@ class transform_data:
         b_syn_dict: dict = {
             self.get_affine(): 1,
             transform_data(
-                affine={"degrees": 5, "scales": (1, 1.3), "center": "image"}
+                affine={"degrees": 5, "scales": (1.1, 1.3), "center": "image"}
             ).get_affine(): 1,
             transform_data(
-                affine={"degrees": 5, "scales": (0.8, 1), "center": "image"}
+                affine={"degrees": 5, "scales": (0.8, 1.1), "center": "image"}
             ).get_affine(): 1,
             transform_data(
-                affine={"degrees": 5, "scales": (0.7, 1), "center": "image"}
+                affine={"degrees": 5, "scales": (0.7, 1.1), "center": "image"}
             ).get_affine(): 1,
         }
         return b_syn_dict
@@ -250,16 +250,16 @@ class transform_data:
         assigned to each transform."""
         g_syn_dict: dict = {
             transform_data(
-                affine={"degrees": 5, "scales": (1, 1.02), "center": "image"}
+                affine={"degrees": 5, "scales": (1, 1.0), "center": "image"}
             ).get_affine(): 1,
             transform_data(
-                affine={"degrees": 5, "scales": (1, 1.05), "center": "image"}
+                affine={"degrees": 5, "scales": (1, 1.0), "center": "image"}
             ).get_affine(): 1,
             transform_data(
-                affine={"degrees": 5, "scales": (0.95, 1), "center": "image"}
+                affine={"degrees": 5, "scales": (1.0, 1), "center": "image"}
             ).get_affine(): 1,
             transform_data(
-                affine={"degrees": 5, "scales": (0.98, 1), "center": "image"}
+                affine={"degrees": 5, "scales": (1.0, 1), "center": "image"}
             ).get_affine(): 1,
         }
         return g_syn_dict
