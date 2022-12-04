@@ -26,7 +26,7 @@ class config:
     num_workers = 32  # checked in jupyter notebook for optimal value. 2 training (w/o validation) epochs in 229 secs
     lr = 1e-3
     momentum = 0.9
-    optimizer = "SGD"  # or "ADAM"
+    optimizer = "ADAM"  # or "ADAM"
     patience = 7  # patience for early stopping
     """
     Paths for checkpoints
