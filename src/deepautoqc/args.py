@@ -16,13 +16,13 @@ class config:
     # TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
-    requires_grad = True
+    requires_grad = False
     """
     Hyper Arguments
     """
     n_gpus = 4
     batch_size = 16
-    epochs = 30
+    epochs = 50
     num_workers = 32  # checked in jupyter notebook for optimal value. 2 training (w/o validation) epochs in 229 secs
     lr = 1e-3
     momentum = 0.9
