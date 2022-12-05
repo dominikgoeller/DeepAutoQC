@@ -60,9 +60,7 @@ def train_validate(
             optimizer.step()
             scheduler.step()
 
-            train_loss += loss.item() * inputs.size(
-                0
-            )  # in case length of dataset is not dividable by batchsize
+            train_loss += loss.item() * inputs.size(0)
             _, predicted = torch.max(outputs.data, 1)
             train_correct += (predicted == labels).sum().item()
 
