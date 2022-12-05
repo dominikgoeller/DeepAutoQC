@@ -16,7 +16,7 @@ class config:
     # TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
-    requires_grad = False
+    requires_grad = True
     """
     Hyper Arguments
     """
@@ -27,7 +27,7 @@ class config:
     lr = 1e-3
     momentum = 0.9
     optimizer = "ADAM"  # or "ADAM"
-    patience = 7  # patience for early stopping
+    patience = 15  # patience for early stopping
     """
     Paths for checkpoints
     """
