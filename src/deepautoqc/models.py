@@ -37,8 +37,9 @@ def resnet50(requires_grad: bool = config.requires_grad, weights_path=weight_pat
             param.requires_grad = False
 
     num_ftrs = model.fc.in_features
-    # model.avgpool is already an adaptivepoolinglayer which handles input tensors of all sizes and adapts its pooling to the specified output dims
+    # model.avgpool = AdaptiveAvgPool2d(output_size=(1, 1)) which handles input tensors of all sizes and adapts its pooling to the specified output dims
     model.fc = nn.Linear(num_ftrs, config.num_classes)
+
     print("...Finished loading model...")
     print(f"The model has {count_parameters(model):,} trainable parameters")
     return model
