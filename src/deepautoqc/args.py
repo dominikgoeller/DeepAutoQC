@@ -16,7 +16,7 @@ class config:
     # TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
     SEED = 42
-    requires_grad = True
+    requires_grad = False
     """
     Hyper Arguments
     """
