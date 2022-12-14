@@ -34,7 +34,8 @@ def train_validate(
     scheduler,
     earlystopper: EarlyStopping,
     device: torch.device,
-    n_epochs: int = config.epochs,
+    # n_epochs: int = config.epochs,
+    n_epochs: int,
 ):
     train_losses = []
     val_losses = []
@@ -121,24 +122,34 @@ def train_validate(
             break
 
 
-def main(data_path: Path, which_optim: str, resume_path: str):
+def main(
+    data_path: Path,
+    which_optim: str,
+    resume_path: str,
+    epochs: int,
+    batch_size: int,
+    lr: float,
+    fine_tune: bool,
+):
     reproducibility()
     skullstrip_list = create_skullstrip_list(usable_dir=data_path)
     dataset = SkullstripDataset(skullstrips=skullstrip_list)
     train_loader, val_loader = generate_train_validate_split(
         dataset=dataset,
-        batch_size=config.batch_size,
+        batch_size=batch_size,
+        # batch_size=config.batch_size,
         seed=config.SEED,
         num_workers=config.num_workers,
     )
 
-    model = resnet50()
+    model = resnet50(requires_grad=fine_tune)
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     if which_optim == "SGD":
         optimizer = optim.SGD(
             params=trainable_params,
-            lr=config.lr,
+            lr=lr,
+            # lr=config.lr,
             momentum=config.momentum,
             nesterov=True,
             weight_decay=1e-4,
@@ -146,7 +157,11 @@ def main(data_path: Path, which_optim: str, resume_path: str):
         # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
     elif which_optim == "ADAM":
         optimizer = optim.Adam(
-            params=trainable_params, lr=config.lr, betas=(0.9, 0.98), eps=1e-9
+            params=trainable_params,
+            lr=lr,
+            # lr=config.lr,
+            betas=(0.9, 0.98),
+            eps=1e-9,
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
 
     if resume_path is not None:
@@ -172,6 +187,7 @@ def main(data_path: Path, which_optim: str, resume_path: str):
         scheduler=scheduler,
         earlystopper=earlystopping,
         device=device,
+        n_epochs=epochs,
     )
 
 
@@ -184,10 +200,47 @@ if __name__ == "__main__":
         type=str,
         help="path to latest checkpoint (default: None)",
     )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        default=20,
+        help="number of epochs to train our network for",
+    )
+    parser.add_argument(
+        "-b",
+        "--batch-size",
+        dest="batch_size",
+        type=int,
+        default=16,
+        help="batch size for data loaders",
+    )
+    parser.add_argument(
+        "-lr",
+        "--learning-rate",
+        type=float,
+        dest="learning_rate",
+        default=0.001,
+        help="learning rate for training the model",
+    )
+    parser.add_argument(
+        "-ft",
+        "--fine-tune",
+        action="store_true",
+        help="whether to fine tune all layers or not",
+    )
     args = parser.parse_args()
     resume_path = args.resume
+    fine_tune = args.fine_tune
+    learning_rate = args.learning_rate
+    batch_size = args.batch_size
+    epochs = args.epochs
     main(
         data_path=config.DATA_PATH,
         which_optim=config.optimizer,
         resume_path=resume_path,
+        epochs=epochs,
+        batch_size=batch_size,
+        lr=learning_rate,
+        fine_tune=fine_tune,
     )

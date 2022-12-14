@@ -20,7 +20,7 @@ def count_parameters(model_conv: ResNet):
     return sum(p.numel() for p in model_conv.parameters() if p.requires_grad)
 
 
-def resnet50(requires_grad: bool = config.requires_grad, weights_path=weight_path):
+def resnet50(requires_grad: bool = False, weights_path=weight_path):
     """Load ResNet50 CNN with pretrained weights.
 
     Args:
