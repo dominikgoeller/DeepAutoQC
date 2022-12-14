@@ -155,15 +155,15 @@ def device_preparation(n_gpus: int) -> tuple[torch.device, list[int]]:
 
 def load_model(model_filepath: Path):
     """Load model from checkpoint and set to eval mode."""
-    ckpt = torch.load(
-        model_filepath, map_location=torch.device("cpu")
-    )  # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
-    if torch.cuda.is_available():
-        ckpt = torch.load(model_filepath)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # ckpt = torch.load(
+    #    model_filepath, map_location=torch.device("cpu")
+    # )  # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
+    # if torch.cuda.is_available():
+    #    ckpt = torch.load(model_filepath)
     # model = ckpt["model"]
-    model = nn.DataParallel(
-        resnet50()
-    )  # wrap resnet50 model with nn.DataParallel to not get missing_keys error!
+    ckpt = torch.load(model_filepath, map_location=device)
+    model = nn.DataParallel(resnet50()).to(device=device)
     model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
     return model
