@@ -83,7 +83,8 @@ def train_validate(
 
                 _, predicted = torch.max(outputs.data, 1)
                 # probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
-
+                # print("LABELS:", labels)
+                # print("PREDICTED:",predicted)
                 valid_total += labels.size(0)
                 valid_correct += (predicted == labels).sum().item()
 
