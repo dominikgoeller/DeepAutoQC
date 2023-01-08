@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.optim as optim
+from adan_pytorch import Adan
 from args import config
 from data import SkullstripDataset, generate_train_validate_split
 from models import resnet50
@@ -164,6 +165,17 @@ def main(
             betas=(0.9, 0.98),
             eps=1e-9,
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
+    elif which_optim == "ADAN":
+        optimizer = Adan(
+            trainable_params,
+            lr=1e-3,  # learning rate (can be much higher than Adam, up to 5-10x)
+            betas=(
+                0.02,
+                0.08,
+                0.01,
+            ),  # beta 1-2-3 as described in paper - author says most sensitive to beta3 tuning
+            weight_decay=0.02,  # weight decay 0.02 is optimal per author
+        )
 
     if resume_path is not None:
         model, optimizer = resume_training(model_filepath=resume_path, model=model)

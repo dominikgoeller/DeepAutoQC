@@ -11,8 +11,8 @@ class config:
     """
 
     DATA_PATH = Path(
-        # "/data/gpfs-1/users/goellerd_c/work/usable"  # path to data on hpc-cluster
-        "/mnt/mbServerProjects/HOME/USERS/lea/auto_qc/dataset/usable"
+        "/data/gpfs-1/users/goellerd_c/work/usable"  # path to data on hpc-cluster
+        # "/mnt/mbServerProjects/HOME/USERS/lea/auto_qc/dataset/usable"
     )
     # TEST_DATA_PATH = "./data/test_data"
     num_classes = 2
@@ -27,7 +27,7 @@ class config:
     num_workers = 32  # checked in jupyter notebook for optimal value. 2 training (w/o validation) epochs in 229 secs
     lr = 1e-3
     momentum = 0.9
-    optimizer = "ADAM"  # or "ADAM"
+    optimizer = "ADAM"  # "ADAM", "SGD", "ADAN"
     patience = 15  # patience for early stopping
     """
     Paths for checkpoints

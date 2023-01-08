@@ -101,7 +101,7 @@ def predict(model, svg_path: str):
         "rating": classification,
         "confidence": float(prob),
     }
-    return pred_dict
+    # return pred_dict
     json_obj = json.dumps(pred_dict, indent=4)
 
     save_path = "./predictions/" + sub_name.split(sep=".")[0] + ".json"
@@ -118,8 +118,8 @@ def predict(model, svg_path: str):
 def main(model_ckpt: Path, svg_path: str):
 
     model = load_model(model_filepath=model_ckpt)
-    # predict(model=model, svg_path=svg_path)
-    predict_reports(model=model, folder_path=svg_path)
+    predict(model=model, svg_path=svg_path)
+    # predict_reports(model=model, folder_path=svg_path)
 
 
 if __name__ == "__main__":

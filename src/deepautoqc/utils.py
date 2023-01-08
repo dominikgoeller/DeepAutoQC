@@ -200,12 +200,14 @@ def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
         optimizer: Optimizer used in training
         model: Model used in training
     """
-    if config.requires_grad:
-        tag = "trainable"
-    elif not config.requires_grad:
-        tag = "frozen"
+    # if config.requires_grad:
+    #    tag = "trainable"
+    # elif not config.requires_grad:
+    #    tag = "frozen"
+    tag = "finetune" if model.requires_grad else "frozen"
     directory = Path(config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d"))
     directory.mkdir(parents=True, exist_ok=True)
-    file_name = Path("ResNet" + "_" + tag + "_" + optimizer.__class__.__name__ + ".pt")
+    # file_name = Path("ResNet" + "_" + tag + "_" + optimizer.__class__.__name__ + ".pt")
+    file_name = f"{model.__class__.__name__}_{tag}_{optimizer.__class__.__name__}.pt"
     ckpt_path = os.path.join(directory, file_name)
     return ckpt_path
