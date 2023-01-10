@@ -222,7 +222,7 @@ def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
 
 
 def augment_data(
-    datapoints: list(tuple(Path, Path))
+    datapoints: list[tuple[Path, Path]]
 ) -> list[tuple[nib.Nifti1Image, nib.Nifti1Image, int]]:
     """
     This function applies random augmentation to the datapoints using one of the four modes -
