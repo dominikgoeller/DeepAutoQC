@@ -11,7 +11,7 @@ class config:
     """
 
     DATA_PATH = Path(
-        "/data/gpfs-1/users/goellerd_c/work/usable"  # path to data on hpc-cluster
+        "/data/gpfs-1/users/goellerd_c/work/usable2/usable"  # path to data on hpc-cluster
         # "/mnt/mbServerProjects/HOME/USERS/lea/auto_qc/dataset/usable"
     )
     # TEST_DATA_PATH = "./data/test_data"
