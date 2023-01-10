@@ -66,6 +66,8 @@ def predict(model, svg_path: str):
         x = (
             F.softmax(output, dim=1).detach().cpu().numpy()
         )  # or output[0], dim=0 probability for class
+        print("Test1", F.softmax(output, dim=1)[:, 0])
+        print("Test2", F.softmax(output, dim=1))
         # x = F.softmax(output, dim=1)
         # conf, classes = torch.max(x, 1)
     x = np.round(x, 4)

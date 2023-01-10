@@ -1,9 +1,11 @@
+import logging
 import os
+import pickle
 import random
-import sys
 from datetime import datetime
 from pathlib import Path
 
+import nibabel as nib
 import numpy as np
 import torch
 from args import config
@@ -12,6 +14,12 @@ from models import resnet50
 from torch import nn
 from torch.optim import Optimizer
 from torchvision.models import ResNet
+from transforms import (
+    BadScannerBrain,
+    BadSyntheticBrain,
+    GoodScannerBrain,
+    GoodSyntheticBrain,
+)
 
 
 class EarlyStopping:
@@ -211,3 +219,63 @@ def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
     file_name = f"{model.__class__.__name__}_{tag}_{optimizer.__class__.__name__}.pt"
     ckpt_path = os.path.join(directory, file_name)
     return ckpt_path
+
+
+def augment_data(
+    datapoints: list(tuple(Path, Path))
+) -> list[tuple[nib.Nifti1Image, nib.Nifti1Image, int]]:
+    """
+    This function applies random augmentation to the datapoints using one of the four modes -
+    "scanner_bad", "syn_bad", "scanner_good", "syn_good" and returns the augmented datapoints in the format (t1w, mask, new_label)
+    :param datapoints: list of tuples of Path objects (t1w, mask)
+    :return: list of tuples (t1w, mask, new_label)
+    """
+    reproducibility()  # either use reproducibility or save file as pickle
+    modes = ["scanner_bad", "syn_bad", "scanner_good", "syn_good"]
+    augmented_datapoints = []
+    new_label_count = {0: 0, 1: 0}
+    logging.info("Started augmentation for datapoints")
+    for sample in datapoints:
+        mode = random.choice(modes)
+        if mode == "scanner_bad":
+            brain = BadScannerBrain(t1w=sample[0], mask=sample[1])
+            t1w, mask = brain.apply()
+            new_label = 0
+        elif mode == "syn_bad":
+            brain = BadSyntheticBrain(t1w=sample[0], mask=sample[1])
+            t1w, mask = brain.apply()
+            new_label = 0
+        elif mode == "scanner_good":
+            brain = GoodScannerBrain(t1w=sample[0], mask=sample[1])
+            t1w, mask = brain.apply()
+            new_label = 1
+        elif mode == "syn_good":
+            brain = GoodSyntheticBrain(t1w=sample[0], mask=sample[1])
+            t1w, mask = brain.apply()
+            new_label = 1
+        augmented_datapoints.append((t1w, mask, new_label))
+        new_label_count[new_label] += 1
+    logging.info("Completed augmentation for datapoints")
+    logging.info(f"Label distribution: {new_label_count}")
+    return augmented_datapoints
+
+
+def save_to_pickle(augmented_data: list[tuple[Path, Path, int]], file_path: str):
+    """
+    This function saves the augmented data to a pickle file
+    :param augmented_data: List of tuples (t1w, mask, new_label)
+    :param file_path: str path where to save the pickle file
+    """
+    with open(file_path, "wb") as file:
+        pickle.dump(augmented_data, file)
+
+
+def load_from_pickle(file_path: str) -> list:
+    """
+    This function loads the augmented data from a pickle file
+    :param file_path: str path where the pickle file is stored
+    :return: list of tuples (t1w, mask, new_label)
+    """
+    with open(file_path, "rb") as file:
+        augmented_data = pickle.load(file)
+    return augmented_data

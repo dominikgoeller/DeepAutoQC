@@ -9,14 +9,20 @@ import torch
 import torch.optim as optim
 from adan_pytorch import Adan
 from args import config
-from data import SkullstripDataset, generate_train_validate_split
+from data import (
+    SkullstripDataset,
+    TestSkullstripDataset,
+    generate_train_validate_split,
+)
 from models import resnet50
+from sklearn.metrics import f1_score, roc_auc_score
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
 from utils import (  # noqa: E402
     EarlyStopping,
+    augment_data,
     build_save_path,
     create_skullstrip_list,
     device_preparation,
@@ -40,6 +46,8 @@ def train_validate(
 ):
     train_losses = []
     val_losses = []
+    train_accs = []
+    val_accs = []
     for epoch in range(n_epochs):
         train_loss, valid_loss, train_correct, valid_correct = 0.0, 0.0, 0.0, 0.0
         start_time = time.monotonic()
@@ -60,7 +68,7 @@ def train_validate(
 
             loss.backward()
             optimizer.step()
-            scheduler.step()
+            # scheduler.step()
 
             train_loss += loss.item() * inputs.size(0)
             _, predicted = torch.max(outputs.data, 1)
@@ -83,7 +91,9 @@ def train_validate(
                 valid_loss += loss.item() * inputs.size(0)
 
                 _, predicted = torch.max(outputs.data, 1)
-                # probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
+                # probabilities = torch.nn.functional.softmax(outputs, dim=1)[:, 0]
+
+                # f1 = f1_score(labels.cpu().numpy(), predicted.cpu().numpy())
                 # print("LABELS:", labels)
                 # print("PREDICTED:",predicted)
                 valid_total += labels.size(0)
@@ -100,6 +110,9 @@ def train_validate(
 
         train_losses.append(train_loss)
         val_losses.append(valid_loss)
+
+        train_accs.append(train_correct)
+        val_accs.append(valid_correct)
         print(f"------ Epoch: {epoch} ------")
         print(f"EpochTime:{epoch_mins}m {epoch_secs}s")
         print(f"Train loss: {train_loss}")
@@ -117,6 +130,8 @@ def train_validate(
             "epoch": epoch,
             "train_losses": train_losses,
             "val_losses": val_losses,
+            "train_accs": train_accs,
+            "val_accs": val_accs,
         }
         earlystopper(valid_loss, best_model=best_model, epoch=epoch)
         if earlystopper.early_stop:
@@ -135,7 +150,9 @@ def main(
 ):
     reproducibility()
     skullstrip_list = create_skullstrip_list(usable_dir=data_path)
-    dataset = SkullstripDataset(skullstrips=skullstrip_list)
+    # dataset = SkullstripDataset(skullstrips=skullstrip_list)
+    augmented_data = augment_data(datapoints=skullstrip_list)
+    dataset = TestSkullstripDataset(augmented_data)
     train_loader, val_loader = generate_train_validate_split(
         dataset=dataset,
         batch_size=batch_size,
@@ -185,7 +202,7 @@ def main(
     if len(device_ids) > 1:
         model = nn.DataParallel(module=model, device_ids=device_ids)
 
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
+    # scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
     criterion = nn.CrossEntropyLoss().to(device=device)
     # build save path for checkpoint
     ckpt_path = build_save_path(optimizer=optimizer, model=model)
@@ -197,7 +214,7 @@ def main(
         val_l=val_loader,
         criterion=criterion,
         optimizer=optimizer,
-        scheduler=scheduler,
+        # scheduler=scheduler,
         earlystopper=earlystopping,
         device=device,
         n_epochs=epochs,
