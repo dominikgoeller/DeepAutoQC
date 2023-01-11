@@ -201,7 +201,7 @@ def resume_training(model_filepath: Path, model):
     return model, optimizer
 
 
-def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
+def build_save_path(optimizer: Optimizer, fine_tune: bool, model: ResNet = ResNet):
     """Create folder of current date if not already exists and save modelweights to it
 
     Args:
@@ -212,7 +212,7 @@ def build_save_path(optimizer: Optimizer, model: ResNet = ResNet):
     #    tag = "trainable"
     # elif not config.requires_grad:
     #    tag = "frozen"
-    tag = "finetune" if model.requires_grad else "frozen"
+    tag = "finetune" if fine_tune else "frozen"
     directory = Path(config.EARLYSTOP_PATH + datetime.today().strftime("%Y-%m-%d"))
     directory.mkdir(parents=True, exist_ok=True)
     # file_name = Path("ResNet" + "_" + tag + "_" + optimizer.__class__.__name__ + ".pt")

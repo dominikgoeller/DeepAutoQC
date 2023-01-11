@@ -209,7 +209,7 @@ def main(
     # scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
     criterion = nn.CrossEntropyLoss().to(device=device)
     # build save path for checkpoint
-    ckpt_path = build_save_path(optimizer=optimizer, model=model)
+    ckpt_path = build_save_path(optimizer=optimizer, fine_tune=fine_tune, model=model)
     earlystopping = EarlyStopping(path=ckpt_path, verbose=True)
 
     train_validate(
