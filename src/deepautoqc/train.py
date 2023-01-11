@@ -39,7 +39,7 @@ def train_validate(
     val_l: DataLoader,
     criterion,
     optimizer,
-    scheduler,
+    # scheduler,
     earlystopper: EarlyStopping,
     device: torch.device,
     # n_epochs: int = config.epochs,
