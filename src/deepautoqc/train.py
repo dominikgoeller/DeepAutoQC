@@ -141,7 +141,7 @@ def train_validate(
 
 
 def main(
-    data_path: Path,
+    data_path: str,
     which_optim: str,
     resume_path: str,
     epochs: int,
@@ -150,7 +150,7 @@ def main(
     fine_tune: bool,
 ):
     reproducibility()
-    skullstrip_list = create_skullstrip_list(usable_dir=data_path)
+    skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
     dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
     # augmented_data = load_from_pickle(
@@ -228,6 +228,20 @@ def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training Script")
     parser.add_argument(
+        "-d",
+        "--datapath",
+        default=None,
+        type=str,
+        help="path to dataset used for training",
+    )
+    parser.add_argument(
+        "-o",
+        "--optimizer",
+        default="ADAM",
+        type=str,
+        help="specify the optimizer either ADAM, ADAN, SGD",
+    )
+    parser.add_argument(
         "-r",
         "--resume",
         default=None,
@@ -264,14 +278,18 @@ if __name__ == "__main__":
         help="whether to fine tune all layers or not",
     )
     args = parser.parse_args()
+    data_path = args.datapath
+    opt = args.optimizer
     resume_path = args.resume
     fine_tune = args.fine_tune
     learning_rate = args.learning_rate
     batch_size = args.batch_size
     epochs = args.epochs
     main(
-        data_path=config.DATA_PATH,
-        which_optim=config.optimizer,
+        # data_path=config.DATA_PATH,
+        data_path=data_path,
+        # which_optim=config.optimizer,
+        which_optim=opt,
         resume_path=resume_path,
         epochs=epochs,
         batch_size=batch_size,
