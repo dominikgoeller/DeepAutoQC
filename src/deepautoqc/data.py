@@ -118,9 +118,10 @@ class TestSkullstripDataset(Dataset):
 
     def __getitem__(self, idx):
         sample = self.skullstrips[idx]
-        t1w, mask, label = sample
-        image: np.ndarray = to_image(t1w=t1w, mask=mask)
-        image = image.transpose((2, 0, 1))
+        # t1w, mask, label = sample
+        # image: np.ndarray = to_image(t1w=t1w, mask=mask)
+        img, label = sample
+        image = img.transpose((2, 0, 1))
         image = torch.from_numpy(image).float() / 255
 
         return image, label

@@ -150,13 +150,13 @@ def main(
     fine_tune: bool,
 ):
     reproducibility()
-    skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
-    dataset = SkullstripDataset(skullstrips=skullstrip_list)
+    # skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
+    # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
-    # augmented_data = load_from_pickle(
-    #    "/data/gpfs-1/users/goellerd_c/work/small_augmented_dataset"
-    # )
-    # dataset = TestSkullstripDataset(augmented_data)
+    augmented_data = load_from_pickle(
+        "/data/gpfs-1/users/goellerd_c/work/small_augmented_imageset"
+    )
+    dataset = TestSkullstripDataset(augmented_data)
     train_loader, val_loader = generate_train_validate_split(
         dataset=dataset,
         batch_size=batch_size,
