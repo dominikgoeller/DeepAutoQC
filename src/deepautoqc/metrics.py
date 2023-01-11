@@ -9,8 +9,9 @@ def confusion_matrix(actual, predicted):
     cm_display = metrics.ConfusionMatrixDisplay(
         confusion_matrix=confusion_matrix, display_labels=["unusable", "usable"]
     )
-    cm_display.plot()
-    plt.show()
+    # cm_display.plot()
+    # plt.show()
+    return cm_display
 
 
 def plot_losses():
