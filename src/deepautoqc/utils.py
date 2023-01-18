@@ -106,9 +106,9 @@ def reproducibility(seed: int = 42) -> None:
         seed(int, optional): number used as the seed. Default 42.
     """
     torch.manual_seed(seed)
-    # random.seed(seed)
+    random.seed(seed)
     torch.cuda.manual_seed_all(seed)
-    # np.random.seed(seed)
+    np.random.seed(seed)
 
 
 def create_skullstrip_list(usable_dir: Path) -> list:

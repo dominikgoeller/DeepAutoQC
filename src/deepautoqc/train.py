@@ -225,7 +225,7 @@ def main(
     )
 
 
-if __name__ == "__main__":
+def parse_args():
     parser = argparse.ArgumentParser(description="Training Script")
     parser.add_argument(
         "-d",
@@ -278,21 +278,27 @@ if __name__ == "__main__":
         help="whether to fine tune all layers or not",
     )
     args = parser.parse_args()
-    data_path = args.datapath
-    opt = args.optimizer
-    resume_path = args.resume
-    fine_tune = args.fine_tune
-    learning_rate = args.learning_rate
-    batch_size = args.batch_size
-    epochs = args.epochs
+
+    return args
+
+
+if __name__ == "__main__":
+    ARGS = parse_args()
+    # data_path = args.datapath
+    # opt = args.optimizer
+    # resume_path = args.resume
+    # fine_tune = args.fine_tune
+    # learning_rate = args.learning_rate
+    # batch_size = args.batch_size
+    # epochs = args.epochs
     main(
         # data_path=config.DATA_PATH,
-        data_path=data_path,
+        data_path=ARGS.data_path,
         # which_optim=config.optimizer,
-        which_optim=opt,
-        resume_path=resume_path,
-        epochs=epochs,
-        batch_size=batch_size,
-        lr=learning_rate,
-        fine_tune=fine_tune,
+        which_optim=ARGS.opt,
+        resume_path=ARGS.resume_path,
+        epochs=ARGS.epochs,
+        batch_size=ARGS.batch_size,
+        lr=ARGS.learning_rate,
+        fine_tune=ARGS.fine_tune,
     )
