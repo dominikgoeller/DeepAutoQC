@@ -1,8 +1,10 @@
+import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
 import nibabel as nib
 import torchio as tio
+from utils import random_cut_border, random_rotate_mask
 
 
 class BaseBrain(ABC):
@@ -45,9 +47,10 @@ class BadSyntheticBrain(BaseBrain):
         super().__init__(t1w, mask)
 
     def apply(self):
-        transf = transform_data().get_bad_synthetic_transform()
+        # transf = transform_data().get_bad_synthetic_transform()
+        augment_func = random.choice([random_cut_border, random_rotate_mask])
         t1w = self.t1w
-        mask = transf(self.mask)
+        mask = augment_func(self.mask)
         return t1w, mask
 
 
@@ -71,9 +74,11 @@ class GoodSyntheticBrain(BaseBrain):
         super().__init__(t1w, mask)
 
     def apply(self):
-        transf = transform_data().get_good_synthetic_transform()
+        # since the transforms are identity transforms we can just leave them out and return the elastic brain
+        # transf = transform_data().get_good_synthetic_transform()
         t1w = self.t1w
-        mask = transf(self.mask)
+        # mask = transf(self.mask)
+        mask = self.mask
         return t1w, mask
 
 

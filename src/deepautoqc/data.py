@@ -79,23 +79,25 @@ class SkullstripDataset(Dataset):
         # else:
         #    new_t1w = self.transform[1](nib.load(sample[0]))
 
+        # bad = 1 and good = 0 so that bad is TP in confusion matrix
+
         mode = random.choice(self.modes)
         if mode == "scanner_bad":
             brain = BadScannerBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
-            new_label = 0
+            new_label = 1
         elif mode == "syn_bad":
             brain = BadSyntheticBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
-            new_label = 0
+            new_label = 1
         elif mode == "scanner_good":
             brain = GoodScannerBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
-            new_label = 1
+            new_label = 0
         elif mode == "syn_good":
             brain = GoodSyntheticBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
-            new_label = 1
+            new_label = 0
 
         # image: np.ndarray = to_image(t1w=new_t1w, mask_path=sample[1])
         image: np.ndarray = to_image(t1w=t1w, mask=mask)

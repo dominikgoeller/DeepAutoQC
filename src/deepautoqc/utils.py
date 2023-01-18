@@ -11,6 +11,8 @@ import torch
 from args import config
 from halfpipe.file_index.bids import BIDSIndex
 from models import resnet50
+from nilearn.image import new_img_like
+from scipy import ndimage
 from torch import nn
 from torch.optim import Optimizer
 from torchvision.models import ResNet
@@ -104,9 +106,9 @@ def reproducibility(seed: int = 42) -> None:
         seed(int, optional): number used as the seed. Default 42.
     """
     torch.manual_seed(seed)
-    random.seed(seed)
+    # random.seed(seed)
     torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
+    # np.random.seed(seed)
 
 
 def create_skullstrip_list(usable_dir: Path) -> list:
@@ -279,3 +281,67 @@ def load_from_pickle(file_path: str) -> list:
     with open(file_path, "rb") as file:
         augmented_data = pickle.load(file)
     return augmented_data
+
+
+def random_cut_border(mask: nib.Nifti1Image, size: int = 25):
+    mask_data = np.asanyarray(mask.dataobj).astype(bool)
+
+    # Find coordinates of border voxels with argwhere returns Indices of elements that are non-zero
+    # ^ xor operator with binary dilation and mask border will be one pixel next to the original mask border
+    border_coords = np.argwhere(ndimage.binary_dilation(mask_data) ^ mask_data)
+
+    # check if there are border coordinates otherwise return None
+    if border_coords.shape[0] == 0:
+        return None
+
+    # print(border_coords.shape)
+    # print(border_coords.shape[0])
+
+    # Select random coordinate at the border
+    rand_coord = border_coords[np.random.randint(border_coords.shape[0])]
+
+    # print(rand_coord)
+    # print(rand_coord.shape)
+    # print(rand_coord[0], rand_coord[1])
+    # print(mask_data.shape[0], mask_data.shape[1])
+
+    # Find coordinates of square centered at the selected coordinate
+    # and do math.floor() division to get square (size-1 if size uneven)
+    x_min, x_max = max(rand_coord[0] - size // 2, 0), min(
+        rand_coord[0] + size // 2, mask_data.shape[0]
+    )
+    y_min, y_max = max(rand_coord[1] - size // 2, 0), min(
+        rand_coord[1] + size // 2, mask_data.shape[1]
+    )
+
+    assert y_max - y_min == x_max - x_min  # check if it really is square
+
+    # print(x_min, x_max)
+    # print(y_min, y_max)
+
+    # Set voxels in square to False
+    mask_data[x_min:x_max, y_min:y_max] = False
+
+    bad_mask = new_img_like(mask, mask_data, copy_header=True)
+
+    return bad_mask
+
+
+def random_rotate_mask(mask: nib.Nifti1Image, max_angle: int = 20):
+    # angles smaller than -12 degrees or bigger than 12 degrees to always generate bad masks
+    angles = [random.uniform(-max_angle, -12), random.uniform(12, max_angle)]
+    # angle = random.uniform(-max_angle, max_angle)
+    angle = random.choice(angles)
+    # angle = 12
+    # print(angle)
+    # mask = skullstrip.mask
+    mask_data = np.asanyarray(mask.dataobj).astype(bool)
+
+    bad_mask_data = (
+        ndimage.rotate(mask_data, angle, reshape=False, axes=(0, 1), output=float) > 0.5
+    )
+    if not mask_data.shape == bad_mask_data.shape:
+        return None
+    bad_mask = new_img_like(mask, bad_mask_data, copy_header=True)
+
+    return bad_mask

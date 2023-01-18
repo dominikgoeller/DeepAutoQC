@@ -81,10 +81,10 @@ def predict(model, svg_path: str):
     print("x:", x)
     if preds == 1:
         classification = "good"
-        prob = x[0][1]
+        prob = x[0][0]
     elif preds == 0:
         classification = "bad"
-        prob = x[0][0]
+        prob = x[0][1]
     # prob = str(np.round(100 * prob, 2)) + "%"  # as float, ohne 100 multiplikation
     prob = np.round(prob, 4)
     sub_name = svg_path.split("/")[
