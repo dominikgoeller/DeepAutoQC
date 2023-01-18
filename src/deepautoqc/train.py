@@ -292,7 +292,7 @@ if __name__ == "__main__":
     # epochs = args.epochs
     main(
         # data_path=config.DATA_PATH,
-        data_path=ARGS.data_path,
+        data_path=ARGS.datapath,
         # which_optim=config.optimizer,
         which_optim=ARGS.opt,
         resume_path=ARGS.resume_path,
