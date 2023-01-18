@@ -20,9 +20,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
-from utils import (  # noqa: E402
+from utils import (  # noqa: E402; augment_data,
     EarlyStopping,
-    augment_data,
     build_save_path,
     create_skullstrip_list,
     device_preparation,
