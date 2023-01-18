@@ -16,12 +16,13 @@ from scipy import ndimage
 from torch import nn
 from torch.optim import Optimizer
 from torchvision.models import ResNet
-from transforms import (
-    BadScannerBrain,
-    BadSyntheticBrain,
-    GoodScannerBrain,
-    GoodSyntheticBrain,
-)
+
+# from transforms import (
+#    BadScannerBrain,
+#    BadSyntheticBrain,
+#    GoodScannerBrain,
+#    GoodSyntheticBrain,
+# )
 
 
 class EarlyStopping:
@@ -223,15 +224,14 @@ def build_save_path(optimizer: Optimizer, fine_tune: bool, model: ResNet = ResNe
     return ckpt_path
 
 
+"""
 def augment_data(
     datapoints: list[tuple[Path, Path]]
 ) -> list[tuple[nib.Nifti1Image, nib.Nifti1Image, int]]:
-    """
     This function applies random augmentation to the datapoints using one of the four modes -
     "scanner_bad", "syn_bad", "scanner_good", "syn_good" and returns the augmented datapoints in the format (t1w, mask, new_label)
     :param datapoints: list of tuples of Path objects (t1w, mask)
     :return: list of tuples (t1w, mask, new_label)
-    """
     reproducibility()  # either use reproducibility or save file as pickle
     modes = ["scanner_bad", "syn_bad", "scanner_good", "syn_good"]
     augmented_datapoints = []
@@ -260,6 +260,7 @@ def augment_data(
     logging.info("Completed augmentation for datapoints")
     logging.info(f"Label distribution: {new_label_count}")
     return augmented_datapoints
+    """
 
 
 def save_to_pickle(augmented_data: list[tuple[Path, Path, int]], file_path: str):

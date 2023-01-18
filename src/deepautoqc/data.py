@@ -6,7 +6,8 @@ import torch
 import torchio as tio
 from ni_image_helpers import to_image
 from torch.utils.data import DataLoader, Dataset, random_split
-from torchvision import transforms, utils
+
+# from torchvision import transforms, utils
 from transforms import (
     BadScannerBrain,
     BadSyntheticBrain,
