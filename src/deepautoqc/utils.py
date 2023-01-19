@@ -315,8 +315,6 @@ def random_cut_border(mask: nib.Nifti1Image, size: int = 25):
         rand_coord[1] + size // 2, mask_data.shape[1]
     )
 
-    assert y_max - y_min == x_max - x_min  # check if it really is square
-
     # print(x_min, x_max)
     # print(y_min, y_max)
 
