@@ -28,10 +28,10 @@ class config:
     lr = 1e-3
     momentum = 0.9
     optimizer = "ADAN"  # "ADAM", "SGD", "ADAN"
-    patience = 12  # patience for early stopping
+    patience = 50  # patience for early stopping
     """
     Paths for checkpoints
     """
     EARLYSTOP_PATH = "./ckpts/ResNet50/"  # path to save model
     # MODEL_CKPT = "/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/ckpts/ResNet50/2022-12-05/ResNet_trainable_Adam.pt"  # Path to checkpoint to resume training or predict./results/ResNet50/EarlyStopcheckpoint2510.pt"  # src/deepautoqc/results/ResNet50/EarlyStopcheckpoint2510.pt
-    MODEL_CKPT = "/Users/dominik/Downloads/ResNet_trainable_Adam.pt"
+    MODEL_CKPT = "/Users/dominik/Downloads/DataParallel_finetune_Adan.pt"  # "/Users/dominik/Downloads/ResNet_trainable_Adam.pt"

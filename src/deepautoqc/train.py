@@ -14,8 +14,8 @@ from data import (
     TestSkullstripDataset,
     generate_train_validate_split,
 )
+from metrics import confusion_matrix
 from models import resnet50
-from sklearn.metrics import f1_score, roc_auc_score
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import models
@@ -46,10 +46,9 @@ def train_validate(
 ):
     train_losses = []
     val_losses = []
-    train_accs = []
     val_accs = []
     for epoch in range(n_epochs):
-        train_loss, valid_loss, train_correct, valid_correct = 0.0, 0.0, 0.0, 0.0
+        train_loss, valid_loss, valid_correct = 0.0, 0.0, 0.0, 0.0
         start_time = time.monotonic()
         model.train()
         train_bar = tqdm(train_l)
@@ -71,11 +70,11 @@ def train_validate(
             # scheduler.step()
 
             train_loss += loss.item() * inputs.size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            train_correct += (predicted == labels).sum().item()
 
         model.eval()
         valid_total = 0
+        actual = []
+        predicts = []
         with torch.no_grad():
 
             valid_bar = tqdm(val_l)
@@ -98,26 +97,27 @@ def train_validate(
                 # print("PREDICTED:",predicted)
                 valid_total += labels.size(0)
                 valid_correct += (predicted == labels).sum().item()
-
+                actual.extend(labels.detach().cpu().numpy())
+                predicts.extend(predicted.detach().cpu().numpy())
         end_time = time.monotonic()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
         train_loss = np.round(train_loss / len(train_l.dataset), 6)
         valid_loss = np.round(valid_loss / len(val_l.dataset), 6)
 
-        train_correct = np.round(train_correct / train_total, 6)
+        # train_correct = np.round(train_correct / train_total, 6)
         valid_correct = np.round(valid_correct / valid_total, 6)
 
         train_losses.append(train_loss)
         val_losses.append(valid_loss)
 
-        train_accs.append(train_correct)
+        confusion_matrix(actual=actual, predicted=predicts)
+
         val_accs.append(valid_correct)
         print(f"------ Epoch: {epoch} ------")
         print(f"EpochTime:{epoch_mins}m {epoch_secs}s")
         print(f"Train loss: {train_loss}")
         print(f"Valid loss: {valid_loss}")
-        print(f"Train acc: {train_correct}")
         print(f"Valid acc: {valid_correct}")
         best_model = {
             "model": model,
@@ -130,7 +130,7 @@ def train_validate(
             "epoch": epoch,
             "train_losses": train_losses,
             "val_losses": val_losses,
-            "train_accs": train_accs,
+            # "train_accs": train_accs,
             "val_accs": val_accs,
         }
         earlystopper(valid_loss, best_model=best_model, epoch=epoch)

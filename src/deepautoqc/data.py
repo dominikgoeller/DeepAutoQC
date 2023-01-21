@@ -24,44 +24,13 @@ class SkullstripDataset(Dataset):
 
         self.skullstrips = skullstrips
         self.modes = ["scanner_bad", "syn_bad", "scanner_good", "syn_good"]
-        # Transforms
-        # separate konfigurationsdatei für wahrscheinlichkeiten der transforms, plotting aller funktionen zum anschauen, compose function auch verwenden
-        # self.unusable_transforms_dict = {
-        #    tio.RandomAffine(degrees=(20), center="image"): 0.35,
-        #    tio.RandomAffine(scales=(0.85, 0.85), center="image"): 0.35,
-        #    tio.RandomFlip(axes="AP", flip_probability=0.5): 0.05,
-        #    tio.RandomSwap(patch_size=10, num_iterations=50): 0.05,
-        #    tio.RandomNoise(): 0.05,
-        #    tio.RandomSpike(num_spikes=(1, 3), intensity=(0.4, 0.6)): 0.05,
-        #    tio.RandomGhosting(
-        #        num_ghosts=(1, 5), intensity=(0.5, 1.2), restore=0.05
-        #    ): 0.05,
-        #    tio.RandomMotion(degrees=20, translation=20, num_transforms=3): 0.05,
-        # }
+        self.weights = [
+            0.1,
+            0.4,
+            0.25,
+            0.25,
+        ]  # probability distribution for augmentation
 
-    #
-    # self.unusable_transform = tio.Compose(
-    #    [
-    #        tio.ToCanonical(),
-    #        tio.OneOf(self.unusable_transforms_dict),
-    #    ]
-    # )
-    #
-    # self.usable_transforms_dict = {
-    #    tio.RandomSwap(patch_size=5, num_iterations=50): 1,
-    #    tio.RandomSpike(num_spikes=(1, 3), intensity=(0.1, 0.3)): 1,
-    #    tio.RandomGamma(): 1,
-    #    tio.RescaleIntensity(percentiles=(2, 98)): 1,
-    # }
-    #
-    # self.usable_transform = tio.Compose(
-    #    [
-    #        tio.ToCanonical(),
-    #        tio.OneOf(self.usable_transforms_dict),
-    #    ]
-    # )
-    # self.transform = [self.usable_transform, self.unusable_transform]
-    # self.transform = [transforms_cfg.good_transforms, transforms_cfg.bad_transforms]
     # self.mean = (0.485, 0.456, 0.406)
     # self.std = (0.229, 0.224, 0.225)
     # self.mean = (-1.3088, -1.2221, -0.9920) calculated on 315 training samples
@@ -82,7 +51,8 @@ class SkullstripDataset(Dataset):
 
         # bad = 1 and good = 0 so that bad is TP in confusion matrix
 
-        mode = random.choice(self.modes)
+        # mode = random.choice(self.modes)
+        mode = random.choices(self.modes, weights=self.weights)
         if mode == "scanner_bad":
             brain = BadScannerBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
@@ -134,7 +104,7 @@ def generate_test_loader(
     dataset: TestSkullstripDataset, batchsize: int, num_workers: int
 ) -> DataLoader:
     test_loader = DataLoader(
-        dataset=dataset, batch_size=batchsize, num_workers=num_workers
+        dataset=dataset, batch_size=batchsize, pin_memory=True, num_workers=num_workers
     )
     return test_loader
 
@@ -152,7 +122,7 @@ def generate_train_validate_split(
         num_workers:
     """
     dataset_size = len(dataset)
-    train_size = int(dataset_size * 0.7)
+    train_size = int(dataset_size * 0.8)
     val_size = dataset_size - train_size
 
     lengths = [train_size, val_size]
