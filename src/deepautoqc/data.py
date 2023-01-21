@@ -52,20 +52,20 @@ class SkullstripDataset(Dataset):
         # bad = 1 and good = 0 so that bad is TP in confusion matrix
 
         # mode = random.choice(self.modes)
-        mode = random.choices(self.modes, weights=self.weights)
-        if mode == "scanner_bad":
+        mode = random.choices(self.modes, weights=self.weights, k=1)
+        if mode[0] == "scanner_bad":
             brain = BadScannerBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
             new_label = 1
-        elif mode == "syn_bad":
+        elif mode[0] == "syn_bad":
             brain = BadSyntheticBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
             new_label = 1
-        elif mode == "scanner_good":
+        elif mode[0] == "scanner_good":
             brain = GoodScannerBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
             new_label = 0
-        elif mode == "syn_good":
+        elif mode[0] == "syn_good":
             brain = GoodSyntheticBrain(t1w=sample[0], mask=sample[1])
             t1w, mask = brain.apply()
             new_label = 0
