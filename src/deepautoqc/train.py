@@ -48,7 +48,7 @@ def train_validate(
     val_losses = []
     val_accs = []
     for epoch in range(n_epochs):
-        train_loss, valid_loss, valid_correct = 0.0, 0.0, 0.0, 0.0
+        train_loss, valid_loss, valid_correct = 0.0, 0.0, 0.0
         start_time = time.monotonic()
         model.train()
         train_bar = tqdm(train_l)
