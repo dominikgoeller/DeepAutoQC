@@ -1,7 +1,7 @@
-import logging
 import os
 import pickle
 import random
+import shelve
 from datetime import datetime
 from pathlib import Path
 
@@ -344,3 +344,12 @@ def random_rotate_mask(mask: nib.Nifti1Image, max_angle: int = 20):
     bad_mask = new_img_like(mask, bad_mask_data, copy_header=True)
 
     return bad_mask
+
+
+def load_pickle_shelve(path, key_prefix="data_"):
+    data = []
+    with shelve.open(path) as sh:
+        keys = [k for k in sh.keys() if k.startswith(key_prefix)]
+        for key in keys:
+            data.extend(pickle.loads(sh[key]))
+    return data

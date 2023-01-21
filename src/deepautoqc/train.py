@@ -12,6 +12,8 @@ from args import config
 from data import (
     SkullstripDataset,
     TestSkullstripDataset,
+    generate_test_loader,
+    generate_train_loader,
     generate_train_validate_split,
 )
 from metrics import confusion_matrix
@@ -27,6 +29,7 @@ from utils import (  # noqa: E402; augment_data,
     device_preparation,
     epoch_time,
     load_from_pickle,
+    load_pickle_shelve,
     reproducibility,
     resume_training,
 )
@@ -149,19 +152,31 @@ def main(
     fine_tune: bool,
 ):
     reproducibility()
-    skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
-    dataset = SkullstripDataset(skullstrips=skullstrip_list)
+    # skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
+    # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
-    # augmented_data = load_from_pickle(
-    #    "/data/gpfs-1/users/goellerd_c/work/small_augmented_imageset"
+    valid_augdata = load_from_pickle(
+        "/data/gpfs-1/users/goellerd_c/work/small_augmented_imageset"
+    )
+    valid_dataset = TestSkullstripDataset(valid_augdata)
+
+    train_augdata = load_pickle_shelve(
+        "/data/gpfs-1/users/goellerd_c/work/big_augmented_dataset"
+    )
+    train_dataset = TestSkullstripDataset(train_augdata)
+
+    # train_loader, val_loader = generate_train_validate_split(
+    #    dataset=dataset,
+    #    batch_size=batch_size,
+    # batch_size=config.batch_size,
+    #    seed=config.SEED,
+    #    num_workers=config.num_workers,
     # )
-    # dataset = TestSkullstripDataset(augmented_data)
-    train_loader, val_loader = generate_train_validate_split(
-        dataset=dataset,
-        batch_size=batch_size,
-        # batch_size=config.batch_size,
-        seed=config.SEED,
-        num_workers=config.num_workers,
+    train_loader = generate_train_loader(
+        dataset=train_dataset, batchsize=batch_size, num_workers=config.num_workers
+    )
+    val_loader = generate_test_loader(
+        dataset=valid_dataset, batchsize=batch_size, num_workers=config.num_workers
     )
 
     model = resnet50(requires_grad=fine_tune)

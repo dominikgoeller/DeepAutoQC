@@ -109,6 +109,19 @@ def generate_test_loader(
     return test_loader
 
 
+def generate_train_loader(
+    dataset: TestSkullstripDataset, batchsize: int, num_workers: int
+) -> DataLoader:
+    train_loader = DataLoader(
+        dataset=dataset,
+        shuffle=True,
+        batch_size=batchsize,
+        pin_memory=True,
+        num_workers=num_workers,
+    )
+    return train_loader
+
+
 def generate_train_validate_split(
     dataset: SkullstripDataset, batch_size: int, seed: int, num_workers: int
 ) -> tuple[DataLoader, DataLoader]:
