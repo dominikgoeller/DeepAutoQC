@@ -213,8 +213,10 @@ class TransfusionCBRCNN(nn.Module):
 
         x = self.global_pool(x)
         # x shape: batch_size, out_channels
-
+        x = torch.flatten(x, 1)
         x = self.prediction(x)
-        # x shape: batch_size, n_labels
 
-        return (x,)
+        # x shape: batch_size, n_labels not anymore since i flattened
+
+        # return (x,)
+        return x
