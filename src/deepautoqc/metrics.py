@@ -6,9 +6,9 @@ from sklearn import metrics
 def confusion_matrix(actual, predicted):
     assert len(actual) == len(predicted)
     confusion_matrix = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
-    cm_display = metrics.ConfusionMatrixDisplay(
-        confusion_matrix=confusion_matrix, display_labels=["good", "bad"]
-    )
+    # cm_display = metrics.ConfusionMatrixDisplay(
+    #    confusion_matrix=confusion_matrix, display_labels=["good", "bad"]
+    # )
     # tp = np.diag(confusion_matrix)
     precision = np.diag(confusion_matrix) / np.sum(
         confusion_matrix, axis=0
@@ -20,9 +20,9 @@ def confusion_matrix(actual, predicted):
     print("Recall", recall)
     print("Mean precision", np.mean(precision))
     print("Mean recall", np.mean(recall))
-    cm_display.plot()
-    plt.show()
-    # return cm_display
+    # cm_display.plot()
+    # plt.show()
+    return confusion_matrix
 
 
 def plot_losses():

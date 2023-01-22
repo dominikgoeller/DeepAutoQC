@@ -17,7 +17,8 @@ from data import (
     generate_train_validate_split,
 )
 from metrics import confusion_matrix
-from models import resnet50
+from models import TransfusionCBRCNN, resnet50
+from sklearn.metrics import roc_auc_score
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import models
@@ -114,14 +115,15 @@ def train_validate(
         train_losses.append(train_loss)
         val_losses.append(valid_loss)
 
-        confusion_matrix(actual=actual, predicted=predicts)
-
+        conf_matrix = confusion_matrix(actual=actual, predicted=predicts)
+        roc_auc = roc_auc_score(y_true=actual, y_score=predicts)
         val_accs.append(valid_correct)
         print(f"------ Epoch: {epoch} ------")
         print(f"EpochTime:{epoch_mins}m {epoch_secs}s")
         print(f"Train loss: {train_loss}")
         print(f"Valid loss: {valid_loss}")
         print(f"Valid acc: {valid_correct}")
+        print(f"ROC_AUC_SCORE: {roc_auc}")
         best_model = {
             "model": model,
             "model_state_dict": model.state_dict(),
@@ -135,6 +137,8 @@ def train_validate(
             "val_losses": val_losses,
             # "train_accs": train_accs,
             "val_accs": val_accs,
+            "confusion_matrix": conf_matrix,
+            "roc_auc": roc_auc,
         }
         earlystopper(valid_loss, best_model=best_model, epoch=epoch)
         if earlystopper.early_stop:
@@ -156,7 +160,7 @@ def main(
     # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
     valid_augdata = load_from_pickle(
-        "/data/gpfs-1/users/goellerd_c/work/small_augmented_imageset"
+        "/data/gpfs-1/users/goellerd_c/work/preprocimg_augmented_dataset"
     )
     valid_dataset = TestSkullstripDataset(valid_augdata)
 
@@ -179,7 +183,8 @@ def main(
         dataset=valid_dataset, batchsize=batch_size, num_workers=config.num_workers
     )
 
-    model = resnet50(requires_grad=fine_tune)
+    # model = resnet50(requires_grad=fine_tune)
+    model = TransfusionCBRCNN(labels=[0, 1])
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     if which_optim == "SGD":
