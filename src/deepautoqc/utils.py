@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from args import config
 from halfpipe.file_index.bids import BIDSIndex
-from models import resnet50
+from models import TransfusionCBRCNN, resnet50
 from nilearn.image import new_img_like
 from scipy import ndimage
 from torch import nn
@@ -174,7 +174,10 @@ def load_model(model_filepath: Path):
     #    ckpt = torch.load(model_filepath)
     # model = ckpt["model"]
     ckpt = torch.load(model_filepath, map_location=device)
-    model = nn.DataParallel(resnet50()).to(device=device)
+
+    # CREATE MODEL AND LOAD STATE_DICT! Not entire model
+    model = nn.DataParallel(TransfusionCBRCNN(labels=[0, 1])).to(device=device)
+    # model = nn.DataParallel(resnet50()).to(device=device)
     model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
     return model
@@ -263,14 +266,14 @@ def augment_data(
     """
 
 
-def save_to_pickle(augmented_data: list[tuple[Path, Path, int]], file_path: str):
+def save_to_pickle(data, file_path):
     """
     This function saves the augmented data to a pickle file
     :param augmented_data: List of tuples (t1w, mask, new_label)
     :param file_path: str path where to save the pickle file
     """
     with open(file_path, "wb") as file:
-        pickle.dump(augmented_data, file)
+        pickle.dump(data, file)
 
 
 def load_from_pickle(file_path: str) -> list:
@@ -353,3 +356,30 @@ def load_pickle_shelve(path, key_prefix="data_"):
         for key in keys:
             data.extend(pickle.loads(sh[key]))
     return data
+
+
+def split_data(data, split_ratio=0.2):
+    # Count the number of samples with label 1 and 0
+    label_counts = {0: 0, 1: 0}
+    for sample in data:
+        label_counts[sample[1]] += 1
+
+    # Determine the number of samples to keep for each label
+    keep_counts = {
+        label: int((1 - split_ratio) * count) for label, count in label_counts.items()
+    }
+
+    # Create lists to store the split data
+    train_data = []
+    test_data = []
+
+    # Iterate through the data and split the samples
+    for sample in data:
+        label = sample[1]
+        if keep_counts[label] > 0:
+            train_data.append(sample)
+            keep_counts[label] -= 1
+        else:
+            test_data.append(sample)
+
+    return train_data, test_data
