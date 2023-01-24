@@ -33,7 +33,50 @@ from utils import (  # noqa: E402; augment_data,
     load_pickle_shelve,
     reproducibility,
     resume_training,
+    save_to_pickle,
+    split_data,
 )
+
+
+def evaluate_model(trained_model, test_loader, criterion, device: torch.device):
+
+    trained_model.eval()
+
+    truth_labels = []
+    predict_labels = []
+
+    test_loss, test_total, test_correct = 0.0, 0.0, 0.0
+
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device, non_blocking=True), labels.to(
+                device, non_blocking=True
+            )
+            outputs = trained_model(inputs)
+
+            loss = criterion(outputs, labels)
+            test_loss += loss.item() * inputs.size(0)
+
+            _, predicted = torch.max(outputs.data, 1)
+            # probabilities = torch.nn.functional.softmax(outputs, dim=1)[:, 0]
+            test_total += labels.size(0)
+            test_correct += (predicted == labels).sum().item()
+            truth_labels.extend(labels.detach().cpu().numpy())
+            predict_labels.extend(predicted.detach().cpu().numpy())
+
+    test_loss = np.round(test_loss / len(test_loader.dataset), 6)
+    test_accuracy = np.round(test_correct / test_total, 6)
+    conf_matrix = confusion_matrix(actual=truth_labels, predicted=predict_labels)
+    roc_auc = roc_auc_score(y_true=truth_labels, y_score=predict_labels)
+    results = {
+        "test_loss": test_loss,
+        "test_accuracy": test_accuracy,
+        "confusion_matrix": conf_matrix,
+        "roc_auc": roc_auc,
+    }
+    for k, v in results.items():
+        print(k, v)
+    save_to_pickle(data=results, file_path="./predictions/evaluation.pickle")
 
 
 def train_validate(
@@ -50,9 +93,10 @@ def train_validate(
 ):
     train_losses = []
     val_losses = []
+    train_accs = []
     val_accs = []
     for epoch in range(n_epochs):
-        train_loss, valid_loss, valid_correct = 0.0, 0.0, 0.0
+        train_loss, valid_loss, train_correct, valid_correct = 0.0, 0.0, 0.0, 0.0
         start_time = time.monotonic()
         model.train()
         train_bar = tqdm(train_l)
@@ -72,13 +116,15 @@ def train_validate(
             loss.backward()
             optimizer.step()
             # scheduler.step()
-
+            _, predicted = torch.max(outputs.data, 1)
+            train_total += labels.size(0)
+            train_correct += (predicted == labels).sum().item()
             train_loss += loss.item() * inputs.size(0)
 
         model.eval()
         valid_total = 0
-        actual = []
-        predicts = []
+        # actual = []
+        # predicts = []
         with torch.no_grad():
 
             valid_bar = tqdm(val_l)
@@ -101,31 +147,33 @@ def train_validate(
                 # print("PREDICTED:",predicted)
                 valid_total += labels.size(0)
                 valid_correct += (predicted == labels).sum().item()
-                actual.extend(labels.detach().cpu().numpy())
-                predicts.extend(predicted.detach().cpu().numpy())
+                # actual.extend(labels.detach().cpu().numpy())
+                # predicts.extend(predicted.detach().cpu().numpy())
         end_time = time.monotonic()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
         train_loss = np.round(train_loss / len(train_l.dataset), 6)
         valid_loss = np.round(valid_loss / len(val_l.dataset), 6)
 
-        # train_correct = np.round(train_correct / train_total, 6)
+        train_correct = np.round(train_correct / train_total, 6)
         valid_correct = np.round(valid_correct / valid_total, 6)
 
         train_losses.append(train_loss)
         val_losses.append(valid_loss)
 
-        conf_matrix = confusion_matrix(actual=actual, predicted=predicts)
-        roc_auc = roc_auc_score(y_true=actual, y_score=predicts)
+        # conf_matrix = confusion_matrix(actual=actual, predicted=predicts)
+        # roc_auc = roc_auc_score(y_true=actual, y_score=predicts)
+
+        train_accs.append(train_correct)
         val_accs.append(valid_correct)
         print(f"------ Epoch: {epoch} ------")
         print(f"EpochTime:{epoch_mins}m {epoch_secs}s")
         print(f"Train loss: {train_loss}")
         print(f"Valid loss: {valid_loss}")
         print(f"Valid acc: {valid_correct}")
-        print(f"ROC_AUC_SCORE: {roc_auc}")
+        # print(f"ROC_AUC_SCORE: {roc_auc}")
         best_model = {
-            "model": model,
+            # "model": model,
             "model_state_dict": model.state_dict(),
             "optimizer": optimizer,
             "optimizer_state_dict": optimizer.state_dict(),
@@ -135,10 +183,10 @@ def train_validate(
             "epoch": epoch,
             "train_losses": train_losses,
             "val_losses": val_losses,
-            # "train_accs": train_accs,
+            "train_accs": train_accs,
             "val_accs": val_accs,
-            "confusion_matrix": conf_matrix,
-            "roc_auc": roc_auc,
+            # "confusion_matrix": conf_matrix,
+            # "roc_auc": roc_auc,
         }
         earlystopper(valid_loss, best_model=best_model, epoch=epoch)
         if earlystopper.early_stop:
@@ -159,15 +207,12 @@ def main(
     # skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
     # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
-    valid_augdata = load_from_pickle(
-        "/data/gpfs-1/users/goellerd_c/work/preprocimg_augmented_dataset"
-    )
-    valid_dataset = TestSkullstripDataset(valid_augdata)
-
     train_augdata = load_pickle_shelve(
         "/data/gpfs-1/users/goellerd_c/work/big_augmented_dataset"
     )
-    train_dataset = TestSkullstripDataset(train_augdata)
+    train_data, valid_data = split_data(data=train_augdata)
+    train_dataset = TestSkullstripDataset(train_data)
+    valid_dataset = TestSkullstripDataset(valid_data)
 
     # train_loader, val_loader = generate_train_validate_split(
     #    dataset=dataset,
@@ -184,7 +229,7 @@ def main(
     )
 
     # model = resnet50(requires_grad=fine_tune)
-    model = TransfusionCBRCNN(labels=[0, 1])
+    model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     if which_optim == "SGD":
@@ -241,6 +286,17 @@ def main(
         earlystopper=earlystopping,
         device=device,
         n_epochs=epochs,
+    )
+
+    test_data = load_pickle_shelve(
+        "/data/gpfs-1/users/goellerd_c/work/aug_data_smallx4"
+    )
+    test_dataset = TestSkullstripDataset(test_data)
+    test_loader = generate_test_loader(dataset=test_dataset)
+    ckpt = torch.load(ckpt_path, map_location=device)
+    model.load_state_dict(ckpt["model_state_dict"])
+    evaluate_model(
+        trained_model=model, test_loader=test_loader, criterion=criterion, device=device
     )
 
 
