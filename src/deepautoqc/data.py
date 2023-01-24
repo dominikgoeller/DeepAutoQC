@@ -126,7 +126,7 @@ def generate_train_validate_split(
     dataset: SkullstripDataset, batch_size: int, seed: int, num_workers: int
 ) -> tuple[DataLoader, DataLoader]:
     """Split dataset into training and validation set. Since the images will be randomly augmented every time getitem is called our network won't see the same image twice.
-    70% Training and 30% Vaildation. Manual seed is set to an arbitrary number so the split happens the same every time for reproducibility.
+    80% Training and 20% Vaildation. Manual seed is set to an arbitrary number so the split happens the same every time for reproducibility.
 
     Args:
         dataset(SkullstripDataset): The custom SkullstripDataset which is created from a given path is used.
