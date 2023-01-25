@@ -28,7 +28,7 @@ class config:
     lr = 1e-3
     momentum = 0.9
     optimizer = "ADAN"  # "ADAM", "SGD", "ADAN"
-    patience = 15  # patience for early stopping
+    patience = 7  # patience for early stopping
     """
     Paths for checkpoints
     """

@@ -363,21 +363,38 @@ def parse_args():
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    # data_path = args.datapath
-    # opt = args.optimizer
-    # resume_path = args.resume
-    # fine_tune = args.fine_tune
-    # learning_rate = args.learning_rate
-    # batch_size = args.batch_size
-    # epochs = args.epochs
-    main(
-        # data_path=config.DATA_PATH,
-        data_path=ARGS.datapath,
-        # which_optim=config.optimizer,
-        which_optim=ARGS.optimizer,
-        resume_path=ARGS.resume,
-        epochs=ARGS.epochs,
-        batch_size=ARGS.batch_size,
-        lr=ARGS.learning_rate,
-        fine_tune=ARGS.fine_tune,
+
+    model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
+    device, device_ids = device_preparation(n_gpus=config.n_gpus)
+    model.to(device=device)
+    if len(device_ids) > 1:
+        model = nn.DataParallel(module=model, device_ids=device_ids)
+    test_data = load_pickle_shelve(
+        "/data/gpfs-1/users/goellerd_c/work/aug_data_smallx4"
     )
+    test_dataset = TestSkullstripDataset(test_data)
+    test_loader = generate_test_loader(
+        dataset=test_dataset,
+        batchsize=config.batch_size,
+        num_workers=config.num_workers,
+    )
+    criterion = nn.CrossEntropyLoss().to(device=device)
+    ckpt = torch.load(
+        "/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/ckpts/ResNet50/2023-01-25/Tiny-CBR_Adan.pt",
+        map_location=device,
+    )
+    model.load_state_dict(ckpt["model_state_dict"])
+    evaluate_model(
+        trained_model=model, test_loader=test_loader, criterion=criterion, device=device
+    )
+    # main(
+    #    # data_path=config.DATA_PATH,
+    #   data_path=ARGS.datapath,
+    # which_optim=config.optimizer,
+    #   which_optim=ARGS.optimizer,
+    #   resume_path=ARGS.resume,
+    #   epochs=ARGS.epochs,
+    #    batch_size=ARGS.batch_size,
+    #    lr=ARGS.learning_rate,
+    #    fine_tune=ARGS.fine_tune,
+    # )
