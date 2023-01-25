@@ -228,8 +228,8 @@ def main(
         dataset=valid_dataset, batchsize=batch_size, num_workers=config.num_workers
     )
 
-    model = resnet50(requires_grad=fine_tune)
-    # model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
+    # model = resnet50(requires_grad=fine_tune)
+    model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     if which_optim == "SGD":
@@ -363,7 +363,7 @@ def parse_args():
 
 if __name__ == "__main__":
     ARGS = parse_args()
-
+    torch.cuda.empty_cache()
     main(
         # data_path=config.DATA_PATH,
         data_path=ARGS.datapath,
