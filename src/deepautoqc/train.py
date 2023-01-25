@@ -208,7 +208,7 @@ def main(
     # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
     train_augdata = load_pickle_shelve(
-        "/data/gpfs-1/users/goellerd_c/work/big_augmented_dataset"
+        "/data/gpfs-1/users/goellerd_c/work/aug_data_bigx1"
     )
     train_data, valid_data = split_data(data=train_augdata)
     train_dataset = TestSkullstripDataset(train_data)
