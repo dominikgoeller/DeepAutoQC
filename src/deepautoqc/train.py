@@ -228,8 +228,8 @@ def main(
         dataset=valid_dataset, batchsize=batch_size, num_workers=config.num_workers
     )
 
-    # model = resnet50(requires_grad=fine_tune)
-    model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
+    model = resnet50(requires_grad=fine_tune)
+    # model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     if which_optim == "SGD":
@@ -292,7 +292,11 @@ def main(
         "/data/gpfs-1/users/goellerd_c/work/aug_data_smallx4"
     )
     test_dataset = TestSkullstripDataset(test_data)
-    test_loader = generate_test_loader(dataset=test_dataset)
+    test_loader = generate_test_loader(
+        dataset=test_dataset,
+        batchsize=config.batch_size,
+        num_workers=config.num_workers,
+    )
     ckpt = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(ckpt["model_state_dict"])
     evaluate_model(

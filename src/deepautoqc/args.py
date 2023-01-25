@@ -22,7 +22,7 @@ class config:
     Hyper Arguments
     """
     n_gpus = 4
-    batch_size = 16
+    batch_size = 32
     epochs = 50
     num_workers = 32  # checked in jupyter notebook for optimal value. 2 training (w/o validation) epochs in 229 secs
     lr = 1e-3
