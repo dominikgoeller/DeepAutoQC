@@ -38,7 +38,7 @@ from utils import (  # noqa: E402; augment_data,
 )
 
 
-def evaluate_model(trained_model, test_loader, criterion, device: torch.device):
+def evaluate_model(trained_model, test_loader, device: torch.device):
 
     trained_model.eval()
 
@@ -54,9 +54,6 @@ def evaluate_model(trained_model, test_loader, criterion, device: torch.device):
             )
             outputs = trained_model(inputs)
 
-            loss = criterion(outputs, labels)
-            test_loss += loss.item() * inputs.size(0)
-
             _, predicted = torch.max(outputs.data, 1)
             # probabilities = torch.nn.functional.softmax(outputs, dim=1)[:, 0]
             test_total += labels.size(0)
@@ -69,10 +66,11 @@ def evaluate_model(trained_model, test_loader, criterion, device: torch.device):
     conf_matrix = confusion_matrix(actual=truth_labels, predicted=predict_labels)
     roc_auc = roc_auc_score(y_true=truth_labels, y_score=predict_labels)
     results = {
-        "test_loss": test_loss,
         "test_accuracy": test_accuracy,
         "confusion_matrix": conf_matrix,
         "roc_auc": roc_auc,
+        "truth_labels": truth_labels,
+        "predicted_labels": predict_labels,
     }
     for k, v in results.items():
         print(k, v)
