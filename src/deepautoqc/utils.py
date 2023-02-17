@@ -176,8 +176,8 @@ def load_model(model_filepath: Path):
     ckpt = torch.load(model_filepath, map_location=device)
 
     # CREATE MODEL AND LOAD STATE_DICT! Not entire model
-    # model = nn.DataParallel(TransfusionCBRCNN(labels=[0, 1])).to(device=device)
-    # model = nn.DataParallel(resnet50()).to(device=device)
+    #model = nn.DataParallel(TransfusionCBRCNN(labels=[0, 1])).to(device=device)
+    #model = nn.DataParallel(resnet50()).to(device=device)
     model = resnet50().to(device=device)
     model.load_state_dict(ckpt["model_state_dict"])
     model.eval()

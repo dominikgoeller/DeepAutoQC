@@ -208,7 +208,7 @@ def main(
     # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
     train_augdata = load_pickle_shelve(
-        "/data/gpfs-1/users/goellerd_c/work/aug_data_bigx1"
+        "/data/gpfs-1/users/goellerd_c/work/new_aug_data_bigx4"
     )
     train_data, valid_data = split_data(data=train_augdata)
     train_dataset = TestSkullstripDataset(train_data)
@@ -228,7 +228,7 @@ def main(
         dataset=valid_dataset, batchsize=batch_size, num_workers=config.num_workers
     )
 
-    # model = resnet50(requires_grad=fine_tune)
+    #model = resnet50(requires_grad=fine_tune)
     model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
@@ -253,7 +253,7 @@ def main(
     elif which_optim == "ADAN":
         optimizer = Adan(
             trainable_params,
-            lr=1e-3,  # learning rate (can be much higher than Adam, up to 5-10x)
+            lr=lr,  # learning rate (can be much higher than Adam, up to 5-10x)
             betas=(
                 0.02,
                 0.08,
@@ -264,7 +264,8 @@ def main(
 
     if resume_path is not None:
         model, optimizer = resume_training(model_filepath=resume_path, model=model)
-
+    ckpt_path = build_save_path(optimizer=optimizer, fine_tune=fine_tune,
+            model=model)
     device, device_ids = device_preparation(n_gpus=config.n_gpus)
     model.to(device=device)
     if len(device_ids) > 1:
@@ -273,7 +274,7 @@ def main(
     # scheduler = optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=0.995)
     criterion = nn.CrossEntropyLoss().to(device=device)
     # build save path for checkpoint
-    ckpt_path = build_save_path(optimizer=optimizer, fine_tune=fine_tune, model=model)
+    #ckpt_path = build_save_path(optimizer=optimizer, fine_tune=fine_tune, model=model)
     earlystopping = EarlyStopping(path=ckpt_path, verbose=True)
 
     train_validate(

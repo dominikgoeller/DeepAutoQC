@@ -42,7 +42,7 @@ def image_to_tensor(image: np.ndarray) -> np.ndarray:
 def predict_reports(model, folder_path: str):
     save_path = "./predictions/" + "exclude" + ".json"
     results = list()
-
+    
     for path in Path(folder_path).rglob("*strip_report.svg"):
         pred_dict = predict(model=model, svg_path=str(path))
         results.append(pred_dict)
