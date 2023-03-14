@@ -44,7 +44,7 @@ def evaluate_model(trained_model, test_loader, device: torch.device):
 
     truth_labels = []
     predict_labels = []
-
+    bad_scores = []
     test_loss, test_total, test_correct = 0.0, 0.0, 0.0
 
     with torch.no_grad():
@@ -56,24 +56,30 @@ def evaluate_model(trained_model, test_loader, device: torch.device):
 
             _, predicted = torch.max(outputs.data, 1)
             # probabilities = torch.nn.functional.softmax(outputs, dim=1)[:, 0]
+            probability_score = torch.nn.functional.softmax(outputs,
+                    dim=1).detach().cpu().numpy()
+            # get score for bad label
+            bad_score = probability_score[0][1]
             test_total += labels.size(0)
             test_correct += (predicted == labels).sum().item()
             truth_labels.extend(labels.detach().cpu().numpy())
             predict_labels.extend(predicted.detach().cpu().numpy())
+            bad_scores.append(bad_score)
 
     test_loss = np.round(test_loss / len(test_loader.dataset), 6)
     test_accuracy = np.round(test_correct / test_total, 6)
     conf_matrix = confusion_matrix(actual=truth_labels, predicted=predict_labels)
-    roc_auc = roc_auc_score(y_true=truth_labels, y_score=predict_labels)
+    roc_auc = roc_auc_score(y_true=truth_labels, y_score=bad_scores)
     results = {
         "test_accuracy": test_accuracy,
         "confusion_matrix": conf_matrix,
         "roc_auc": roc_auc,
         "truth_labels": truth_labels,
         "predicted_labels": predict_labels,
+        "bad_scores": bad_scores,
     }
-    for k, v in results.items():
-        print(k, v)
+    for k in results.keys():
+        print(k)
     save_to_pickle(data=results, file_path="./predictions/evaluation.pickle")
 
 
@@ -206,7 +212,7 @@ def main(
     # dataset = SkullstripDataset(skullstrips=skullstrip_list)
     # augmented_data = augment_data(datapoints=skullstrip_list)
     train_augdata = load_pickle_shelve(
-        "/data/gpfs-1/users/goellerd_c/work/new_aug_data_bigx4"
+        "/data/gpfs-1/users/goellerd_c/work/V2_aug_data_bigx1"
     )
     train_data, valid_data = split_data(data=train_augdata)
     train_dataset = TestSkullstripDataset(train_data)
@@ -226,8 +232,8 @@ def main(
         dataset=valid_dataset, batchsize=batch_size, num_workers=config.num_workers
     )
 
-    #model = resnet50(requires_grad=fine_tune)
-    model = TransfusionCBRCNN(labels=[0, 1], model_name="tiny")
+    model = resnet50(requires_grad=fine_tune)
+    #model = TransfusionCBRCNN(labels=[0, 1], model_name="tall")
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
 
     if which_optim == "SGD":
@@ -247,6 +253,7 @@ def main(
             # lr=config.lr,
             betas=(0.9, 0.98),
             eps=1e-9,
+            weight_decay = 1e-4,
         )  # as proposed in "Attention is all you need" chapter 5.3 Optimizer
     elif which_optim == "ADAN":
         optimizer = Adan(
@@ -293,13 +300,13 @@ def main(
     test_dataset = TestSkullstripDataset(test_data)
     test_loader = generate_test_loader(
         dataset=test_dataset,
-        batchsize=config.batch_size,
+        batchsize=1,
         num_workers=config.num_workers,
     )
     ckpt = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(ckpt["model_state_dict"])
     evaluate_model(
-        trained_model=model, test_loader=test_loader, criterion=criterion, device=device
+        trained_model=model, test_loader=test_loader, device=device
     )
 
 

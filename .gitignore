@@ -22,6 +22,7 @@
 *.iml
 src/deepautoqc/ckpts/ResNet50/EarlyStopcheckpoint2510.pt
 src/deepautoqc/predictions/
+src/deepautoqc/ckpts/
 src/*.egg-info/
 
 # User-specific files (MonoDevelop/Xamarin Studio)

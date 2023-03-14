@@ -36,11 +36,20 @@ def resnet50(requires_grad: bool = False, weights_path=weight_path):
     ):  # if set to false freeze params, requires_grad is set to TRUE by default upon model loading
         for param in model.parameters():
             param.requires_grad = False
-
+        for module in model.modules():
+            if isinstance(module, nn.BatchNorm2d):
+                module.requires_grad = True
+    # freeze first layer
+    for param in model.layer1.parameters():
+        param.requires_grad = False
+    for module in model.modules():
+        if isinstance(module, nn.BatchNorm2d):
+            module.requires_grad = True
     num_ftrs = model.fc.in_features
     # model.avgpool = AdaptiveAvgPool2d(output_size=(1, 1)) which handles input tensors of all sizes and adapts its pooling to the specified output dims
-    model.fc = nn.Linear(num_ftrs, config.num_classes)
-
+    #model.fc = nn.Linear(num_ftrs, config.num_classes)
+    model.fc = nn.Sequential(nn.Dropout(p=0.5),nn.Linear(num_ftrs,
+        config.num_classes))
     print(
         f"Finished loading model with {count_parameters(model):,} trainable parameters"
     )
@@ -171,6 +180,7 @@ class TransfusionCBRCNN(nn.Module):
     """Based on CBR models seen on Transfusion paper.
 
     Paper: Transfusion: Understanding Transfer Learning for medical imaging
+    from: https://github.com/pdpino/medical-ai/blob/b5ff6aeef6756b17da56507735cbc9543923bcb6/medai/models/classification/transfusion.py
     """
 
     def __init__(

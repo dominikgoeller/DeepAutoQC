@@ -180,6 +180,7 @@ def load_model(model_filepath: Path):
     return model
 
 import re
+from collections import OrderedDict
 
 def load_model_new(model_filepath: Path):
     """Load model from checkpoint and set to eval mode."""
@@ -192,10 +193,11 @@ def load_model_new(model_filepath: Path):
     model_name = re.search(r"(?<=/)[^/]*(?=\.)", str(model_filepath)).group(0)
 
     # Load model
-    if "ResNet50" in model_name:
-        model = nn.DataParallel(resnet50()).to(device=device)
+    if  "ResNet" in model_name:
+        #model = nn.DataParallel(resnet50()).to(device=device)
+        model = resnet50().to(device=device)
     elif "CBR" in model_name:
-        mode = re.search(r"(?<=_)[^_]*(?=-)", str(model_name)).group(0)
+        mode = re.search(r"(L_)?(\w+)-CBR", model_name).group(2)
         model_class = TransfusionCBRCNN(labels=[0, 1], model_name=mode.lower())
         model = nn.DataParallel(model_class).to(device=device)
 
@@ -204,8 +206,8 @@ def load_model_new(model_filepath: Path):
         model.load_state_dict(ckpt["model_state_dict"])
     except RuntimeError as e:
         # If mismatched keys error, strip "module." from keys and try again
-        if "size mismatch" in str(e):
-            new_state_dict = {}
+        if "key" in str(e):
+            new_state_dict = OrderedDict()
             for k, v in ckpt["model_state_dict"].items():
                 if "module." in k:
                     k = k.replace("module.", "")

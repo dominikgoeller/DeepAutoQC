@@ -1,7 +1,8 @@
 import argparse
 import torch
 from train import evaluate_model
-from utils import device_preparation, load_from_pickle, load_model_new
+from utils import (device_preparation, load_from_pickle, load_model_new,
+load_pickle_shelve)
 from args import config
 from data import TestSkullstripDataset, generate_test_loader
 
@@ -20,10 +21,12 @@ def parse_args():
 
 def main(modelpath):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    test_data = load_from_pickle(
-        "/data/gpfs-1/users/goellerd_c/work/T2_real_testset"
-    )
+    test_data = load_from_pickle("/data/gpfs-1/users/goellerd_c/work/T2_real_testset")
+    #test_data = load_pickle_shelve("/data/gpfs-1/users/goellerd_c/work/aug_data_smallx4")
+    #test_data = load_from_pickle(
+       # "/data/gpfs-1/users/goellerd_c/work/L_Series2_TestSet"
+       #"/data/gpfs-1/users/goellerd_c/work/aug_data_small_x4"
+    #)
     test_dataset = TestSkullstripDataset(test_data)
     test_loader = generate_test_loader(
         dataset=test_dataset,
