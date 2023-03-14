@@ -24,6 +24,8 @@ DeepAutoQC/
 |
 |       |--- predictions/ - outputfolder for predictions in json format
 |           |--- sub_102008_skull_strip_report.json - example output file
+|       |--- weights/
+|           |--- S_Small-CBR.pt - example weight file of a trained model
 |
 |       |--- args.py - config class for training configuration
 |       |--- data.py - custom dataset and dataloaders
