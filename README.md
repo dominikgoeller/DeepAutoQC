@@ -24,6 +24,8 @@ DeepAutoQC/
 |
 |       |--- predictions/ - outputfolder for predictions in json format
 |           |--- sub_102008_skull_strip_report.json - example output file
+|       |--- weights/
+|           |--- S_Small-CBR.pt - example weight file of a trained model
 |
 |       |--- args.py - config class for training configuration
 |       |--- data.py - custom dataset and dataloaders
@@ -41,11 +43,11 @@ DeepAutoQC/
 The code in this project can be used by running either `train.py` script or `test.py` script within the command line.
 First of all, you should go to `args.py` and
 ## For Training
-* set the `DATA_PATH` constant to a folder only containing corresponding t1w.nii(.gz), mask.nii(.gz) files as this is required for a training run
-* specify the hyperparameters used in training.
+~~* set the `DATA_PATH` constant to a folder only containing corresponding t1w.nii(.gz), mask.nii(.gz) files as this is required for a training run~~
+* specify the hyperparameters used in training which are not defined by the command line
 * set `EARLYSTOP_PATH` to your desired location where model_weights, optimizer_weights and more parameters will be saved
 
-Then, run `python3 train.py` to start your training process. The progress is logged on the command line.
+Then, run `python3 train.py -o OPTIMIZER[ADAM,ADAN,SGD] -e EPOCHS -b BATCHSIZE -lr LEARNINGRATE -ft FINETUNE[BOOLEAN]` with your desired options to start your training process. The progress is logged on the command line. You can get help for each command.
 
 ## Using multiple GPUs
 You can enable multiple GPUs for training by setting `n_gpus` in `args.py`. If `n_gpus` is set to a value not available on your machine the function `device_preparation` will set `torch.device` to either `"cpu"` or `"cuda"` using all available GPUs.
@@ -59,3 +61,6 @@ You can resume training from a previously saved checkpoint by:
 
 Then, run `python3 test.py [-h] -i INPUT`. Remember `the following arguments are required: -i/--input` should contain the path to your svg file.
 Check `predictions` folder for your output.
+
+## Weights
+* Weights of every trained model are stored in `/src/deepautoqc/weights` with their respective names and the dataset on which they got trained on
