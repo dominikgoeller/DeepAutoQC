@@ -1,4 +1,5 @@
 from copy import deepcopy
+
 from collections import namedtuple
 import numpy as np
 import cairosvg
@@ -10,7 +11,8 @@ import pickle
 import base64
 import matplotlib.pyplot as plt
 import argparse
-
+import os
+import glob
 
 BrainScan = namedtuple("BrainScan", "id, img, label")
 
@@ -91,6 +93,8 @@ def process_image(image_path, save_path):
     axes_elements = parse_svg(image_path)
     results = []
 
+    base_image_name = os.path.basename(os.path.dirname(image_path))
+    base_image_name += os.path.basename(image_path).replace('_skull_strip_report.svg', '')
     for i, item in enumerate(axes_elements):
         (image_element,) = item.getElementsByTagName("image")
         xlink_ns = "http://www.w3.org/1999/xlink"
@@ -144,10 +148,31 @@ def process_image(image_path, save_path):
 
         combined_image = np.flip(combined_image, axis=0) # When displaying with matplotlib.pyplot images were upside down
 
-        result = BrainScan(id=i, img=combined_image, label='usable')
+        row = (i // 7) + 1
+        column = (i % 7) + 1 
+
+        result_id = f'{base_image_name}_report-skull_{row}-{column}'
+
+        result = BrainScan(id=result_id, img=combined_image, label='usable')
         results.append(result)
-    file_path = save_path + 'test.pkl'
-    save_to_pickle(data=results, file_path=file_path)
+    pickle_filename = f'{base_image_name}_report-skull.pkl'
+    pickle_path = os.path.join(save_path, pickle_filename)
+    save_to_pickle(data=results, file_path=pickle_path)
+
+
+def find_skull_strip_reports(base_path):
+    # Make sure path is absolute
+    base_path = os.path.abspath(base_path)
+    
+    # Glob pattern to find all 'skull_strip_report.svg' files in any directories under 'sub-' directories
+    pattern = os.path.join(base_path, "sub-*", "*", "sub-*_skull_strip_report.svg")
+    
+    # Find all matching paths
+    report_paths = glob.glob(pattern)
+    
+    return report_paths
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="SVG Parse Script")
@@ -167,5 +192,14 @@ def parse_args():
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    result = process_image(image_path=ARGS.datapath, save_path=ARGS.savepath)
+    base_path = "/Volumes/PortableSSD/ds-pnc_chunk-9_reports/"
+    report_paths = find_skull_strip_reports(base_path)
+
+    for path in report_paths:
+        try:
+            process_image(image_path=path, save_path=ARGS.savepath)  # pass the path from report_paths
+        except Exception as e:
+            print(f"Error processing {path}: {e}")
+            continue
+    #result = process_image(image_path=ARGS.datapath, save_path=ARGS.savepath)
 
