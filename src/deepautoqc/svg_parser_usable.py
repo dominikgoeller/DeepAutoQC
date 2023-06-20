@@ -1,86 +1,18 @@
+from copy import deepcopy
 from collections import namedtuple
 import numpy as np
 import cairosvg
 from PIL import Image
 import io
-from xml.dom.minidom import parse, Node, Document, Element
+from xml.dom.minidom import parse, Document, Element
 import re
 import pickle
+import base64
+import matplotlib.pyplot as plt
 import argparse
-from svgpathtools import svg2paths,wsvg
-import tempfile
-import os
+
 
 BrainScan = namedtuple("BrainScan", "id, img, label")
-
-def get_transforms(item):
-    #paths, attributes = svg2paths('./output_single_copy.svg')
-    paths, attributes = svg2paths(item)
-    transforms = []
-    for path, attribute in zip(paths, attributes):
-        start_x, start_y = path.start.real, path.start.imag
-        transform_matrix = f"matrix(1 0 0 1 {-start_x} {-start_y-50})" # all images are beginning not at 0 but 100 for y thats why we move -50 to top
-        transforms.append(transform_matrix)
-    return transforms
-
-def apply_transforms_to_svg_element(svg_element: Element, transforms):
-    paths = svg_element.getElementsByTagName('path')
-    for path, transform in zip(paths, transforms):
-        path.setAttribute('transform', transform)
-    
-    
-
-def svgRead(filename: str or io.BytesIO) -> np.ndarray:
-    """Load an SVG file as bytestring and return image in Numpy array"""
-    # Convert SVG to PNG in memory
-    png_content = cairosvg.svg2png(bytestring=filename, output_height=200, output_width=200)
-    # Convert PNG to Numpy array
-    res = np.array(
-        Image.open(io.BytesIO(png_content))
-    )  # has dimension of (870,2047,4) due to unknown reasons
-    image_without_alpha = res[:, :, :3]  # drop alpha channel of image
-    return image_without_alpha
-
-def create_svg_element(axes_el):
-    doc = Document()
-    
-    svg = doc.createElement("svg")
-    doc.appendChild(svg)
-
-    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
-    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink")
-    svg.setAttribute("version", "1.1")
-    svg.appendChild(axes_el)
-
-    return doc.toxml()
-
-def placeholder(axes_el: Element):
-    # Removing text
-    for el in axes_el.getElementsByTagName('g'):
-        for i in range(el.attributes.length):
-            attr = el.attributes.item(i)
-            if re.match(r"text_([1-9]|1[0-9]|2[01])$", attr.value):
-                axes_el.removeChild(el)
-                
-    # Removing brain scan
-    for el in axes_el.getElementsByTagName('image'):
-        if 'image' in el.getAttribute('id'):
-            parent: Element = el.parentNode
-            parent.removeChild(el)
-            
-    # Changing style
-    for el in axes_el.getElementsByTagName('path'):
-        if 'PathCollection' in el.getAttribute('id'):
-            new_style = "fill:#008000;stroke:#ffffff;stroke-width:.5"
-            el.setAttribute('style', new_style)
-        
-    # Changing style in exception cases
-    for el in axes_el.getElementsByTagName('g'):
-        if 'PathCollection' in el.getAttribute('id'):
-            paths = el.getElementsByTagName('path')
-            new_style = "fill:#008000;stroke:#ffffff;stroke-width:.5"
-            for path in paths:
-                path.setAttribute('style', new_style)
 
 def save_to_pickle(data, file_path):
     """
@@ -91,6 +23,28 @@ def save_to_pickle(data, file_path):
     with open(file_path, "wb") as file:
         pickle.dump(data, file)
 
+def create_svg_from_elements(elements, image_array):
+    doc = Document()
+
+    svg = doc.createElement("svg")
+    doc.appendChild(svg)
+
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink")
+    svg.setAttribute("version", "1.1")
+    svg.setAttribute("viewBox", f"0 0 {image_array.shape[1]} {image_array.shape[0]}")
+    for el in elements:
+        svg.appendChild(el)
+
+    return doc.toxml()
+
+
+def find_paths(axes_el: Element):
+    for path in axes_el.getElementsByTagName("path"):
+        new_style = "fill:#008000"
+        path.setAttribute("style", new_style)
+        yield path
+
 
 def parse_svg(report_path: str):
     document = parse(report_path)
@@ -98,32 +52,102 @@ def parse_svg(report_path: str):
     axes_elements = [elem for elem in g_elements if 'axes' in elem.getAttribute('id') and 'axes_1'!=elem.getAttribute('id')]
     return axes_elements
 
-def single_run(data_path: str, save_path: str):
-    sub_list = []
-    axes_elements = parse_svg(data_path)
-    for item in axes_elements:
-        placeholder(item)
-        single_svg = create_svg_element(item)
 
-        # write to temporary file since add_transforms svg2paths function expects a path
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.svg')
-        temp_file.write(single_svg.encode())
-        temp_file.close()
+def parse_transform(transform: str):
+    transform = transform.removeprefix("matrix(")
+    transform = transform.removesuffix(")")
+    tokens = transform.split(" ")
 
-        transforms = get_transforms(temp_file.name)
+    transform_matrix = np.eye(3)
+    transform_matrix[[0, 1, 0, 1, 0, 1], [0, 0, 1, 1, 2, 2]] = list(map(float, tokens))
 
-        apply_transforms_to_svg_element(item, transforms)
+    return transform_matrix
 
-        # another create_svg_element call for the transformed item
-        item_transf = create_svg_element(item)
-        #single_img = svgRead(temp_file.name)
-        single_img = svgRead(item_transf)
-        subject = BrainScan(0, single_img, "usable")
-        sub_list.append(subject)
-        os.unlink(temp_file.name)
-    file_path = save_path + "test.pkl"
-    save_to_pickle(sub_list, file_path=file_path)
 
+def transform_to_svg(matrix) -> str:
+    return (
+        f"matrix({' '.join(map(str, matrix[[0, 1, 0, 1, 0, 1], [0, 0, 1, 1, 2, 2]]))})"
+    )
+
+
+def svgRead(filename: str or io.BytesIO, image_array) -> np.ndarray:
+    png_content = cairosvg.svg2png(
+        bytestring=filename,
+        output_height=image_array.shape[0],
+        output_width=image_array.shape[1],
+    )
+
+    res = np.array(
+        Image.open(io.BytesIO(png_content))
+    )
+    image_without_alpha = res[:, :, :3]
+
+    return image_without_alpha
+
+
+def process_image(image_path, save_path):
+    #BrainScan = namedtuple("BrainScan", "id, img, label")
+
+    axes_elements = parse_svg(image_path)
+    results = []
+
+    for i, item in enumerate(axes_elements):
+        (image_element,) = item.getElementsByTagName("image")
+        xlink_ns = "http://www.w3.org/1999/xlink"
+        base64_data = image_element.getAttributeNS(xlink_ns, "href")
+
+        image_bytes = base64.b64decode(base64_data.split(",")[-1])
+        image_obj = Image.open(io.BytesIO(image_bytes))
+        image_array = np.array(image_obj)
+
+        image_x = float(image_element.getAttribute("x"))
+        image_y = float(image_element.getAttribute("y"))
+        image_height = float(image_element.getAttribute("height"))
+        image_width = float(image_element.getAttribute("width"))
+
+        image_transform = image_element.getAttribute("transform")
+        scale_x = image_width / image_array.shape[1]
+        scale_y = image_height / image_array.shape[0]
+
+        scale_matrix = np.eye(3)
+        scale_matrix[0, 0] = scale_x
+        scale_matrix[1, 1] = scale_y
+
+        translation_matrix = np.eye(3)
+        translation_matrix[0, 2] = image_x
+        translation_matrix[1, 2] = image_y
+
+        combined_affine_matrix = (
+            parse_transform(image_transform) @ translation_matrix @ scale_matrix
+        )
+
+        inv_affine_matrix = np.linalg.inv(combined_affine_matrix)
+        path_item = deepcopy(item)
+        new_paths = list()
+
+        for path in find_paths(path_item):
+            path_id = path.getAttribute("id")
+
+            if path_id and 'PathCollection' not in path_id:
+                continue
+
+            path_transform = inv_affine_matrix
+            path.setAttribute("transform", transform_to_svg(path_transform))
+            new_paths.append(path)
+        
+        single_svg = create_svg_from_elements(new_paths, image_array)
+        single_img = svgRead(single_svg, image_array)
+
+        combined_image = np.zeros((image_array.shape[0], image_array.shape[1], 3))
+        combined_image[:, :, 0] = image_array.mean(axis=2) / 255
+        combined_image[:, :, 1] = (single_img != 0).any(axis=2)
+
+        combined_image = np.flip(combined_image, axis=0) # When displaying with matplotlib.pyplot images were upside down
+
+        result = BrainScan(id=i, img=combined_image, label='usable')
+        results.append(result)
+    file_path = save_path + 'test.pkl'
+    save_to_pickle(data=results, file_path=file_path)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="SVG Parse Script")
@@ -143,4 +167,5 @@ def parse_args():
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    single_run(data_path=ARGS.datapath, save_path=ARGS.savepath)
+    result = process_image(image_path=ARGS.datapath, save_path=ARGS.savepath)
+
