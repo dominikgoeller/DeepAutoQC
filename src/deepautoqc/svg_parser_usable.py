@@ -93,8 +93,8 @@ def process_image(image_path, save_path):
     axes_elements = parse_svg(image_path)
     results = []
 
-    base_image_name = os.path.basename(os.path.dirname(image_path))
-    base_image_name += os.path.basename(image_path).replace('_skull_strip_report.svg', '')
+    #base_image_name = os.path.basename(os.path.dirname(os.path.dirname(image_path)))
+    base_image_name = os.path.basename(image_path).replace('_skull_strip_report.svg', '')
     for i, item in enumerate(axes_elements):
         (image_element,) = item.getElementsByTagName("image")
         xlink_ns = "http://www.w3.org/1999/xlink"
