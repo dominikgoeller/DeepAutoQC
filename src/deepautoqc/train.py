@@ -7,7 +7,9 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.optim as optim
+from collections import namedtuple
 from adan_pytorch import Adan
+from sklearn.model_selection import train_test_split
 from args import config
 from data import (
     SkullstripDataset,
@@ -38,6 +40,7 @@ from utils import (  # noqa: E402; augment_data,
     split_data,
 )
 
+BrainScan = namedtuple("BrainScan", "id, img, label")
 
 def evaluate_model(trained_model, test_loader, device: torch.device):
 
@@ -209,12 +212,29 @@ def main(
     fine_tune: bool,
 ):
     reproducibility()
-    folder_path = Path('/Volumes/PortableSSD/procesed_usable')
-    pickle_paths = list(folder_path.glob('*.pkl'))
-    brain_scan_dataset = BrainScanDataset(pickle_paths=pickle_paths)
+    usable_folder_path = Path('/Volumes/PortableSSD/procesed_usable')
+    unusable_folder_path = Path('/Volumes/PortableSSD/processed_unusable')
+    pickle_paths = list(usable_folder_path.glob('*.pkl')) + list(unusable_folder_path.glob('*.pkl'))
+    data = []
+    for p in pickle_paths:
+            datapoints = load_from_pickle(p)
+            data.extend(datapoints)
+    print(f"Loaded data size: {len(data)}")
+
+    ids = [scan.id for scan in data]
+    imgs = [scan.img for scan in data]
+    labels = [scan.label for scan in data]
+
+    train_ids, val_ids, train_imgs, val_imgs, train_labels, val_labels = train_test_split(ids, imgs, labels, test_size=0.2, random_state=42, stratify=labels)
+
+    train_data = [BrainScan(id, img, label) for id, img, label in zip(train_ids, train_imgs, train_labels)]
+    val_data = [BrainScan(id, img, label) for id, img, label in zip(val_ids, val_imgs, val_labels)]
+
+    train_brain_scan_dataset = BrainScanDataset(brain_scan_list=train_data)
+    val_brain_scan_dataset = BrainScanDataset(brain_scan_list=val_data)
     #train_data, valid_data = split_data(data=train_augdata)
-    train_dataset = TestSkullstripDataset(train_data)
-    valid_dataset = TestSkullstripDataset(valid_data)
+    #train_dataset = TestSkullstripDataset(train_data)
+    #valid_dataset = TestSkullstripDataset(valid_data)
 
     # train_loader, val_loader = generate_train_validate_split(
     #    dataset=dataset,
