@@ -188,14 +188,14 @@ def process_image(image_path, save_path):
             user_tuples = user_input.split(';')  # Split input into tuples
             parsed_tuples = [tuple(map(int, t.split(','))) for t in user_tuples]
 
-        # Subtract 1 from positions because of 0-based indexing
-        unusable_positions = [(row-1, col-1) for row, col in parsed_tuples]
+            # Subtract 1 from positions because of 0-based indexing
+            unusable_positions = [(row-1, col-1) for row, col in parsed_tuples]
 
-        # Update labels of unusable images
-        for i, result in enumerate(results):
-            row, col = i // 7, i % 7
-            if (row, col) in unusable_positions:
-                results[i] = result._replace(label='unusable')
+            # Update labels of unusable images
+            for i, result in enumerate(results):
+                row, col = i // 7, i % 7
+                if (row, col) in unusable_positions:
+                    results[i] = result._replace(label='unusable')
     pickle_filename = f'{base_image_name}_report-skull.pkl'
     pickle_path = os.path.join(save_path, pickle_filename)
     save_to_pickle(data=results, file_path=pickle_path)
@@ -252,5 +252,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Error processing {path}: {e}")
             continue
-    #result = process_image(image_path=ARGS.datapath, save_path=ARGS.savepath)
-
