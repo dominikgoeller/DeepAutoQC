@@ -243,8 +243,8 @@ if __name__ == "__main__":
     ARGS = parse_args()
     print(f'Arguments: {ARGS}')
     #base_path = "/Volumes/PortableSSD/ds-pnc_chunk-9_reports/"
-    base_path = "/Volumes/PortableSSD/unusable_svg/"
-    report_paths = find_skull_strip_reports(base_path)
+    #base_path = "/Volumes/PortableSSD/unusable_svg/"
+    report_paths = find_skull_strip_reports(ARGS.datapath)
     print(len(report_paths))
     for path in report_paths:
         try:
