@@ -6,6 +6,7 @@ import torch
 import torchio as tio
 from ni_image_helpers import to_image
 from torch.utils.data import DataLoader, Dataset, random_split
+from numpy import typing as npt
 
 # from torchvision import transforms, utils
 from transforms import (
@@ -14,8 +15,26 @@ from transforms import (
     GoodScannerBrain,
     GoodSyntheticBrain,
 )
-from utils import reproducibility
+from utils import reproducibility, load_from_pickle
 
+class BrainScanDataset(Dataset):
+    def __init__(self, pickle_paths):
+        print(len(pickle_paths))
+        self.data = []
+        for p in pickle_paths:
+            datapoints = load_from_pickle(p)
+            self.data.extend(datapoints)
+        print(f"Loaded data size: {len(self.data)}")
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        item = self.data[index]
+        # Preprocess your image data if needed
+        img: npt.NDArray= item.img
+        label = item.label
+        img: npt.NDArray = img.transpose((2, 0, 1))
+        return img, label
 
 class SkullstripDataset(Dataset):
     """Skullstrip reports Dataset"""

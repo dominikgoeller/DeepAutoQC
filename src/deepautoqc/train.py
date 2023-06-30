@@ -15,6 +15,7 @@ from data import (
     generate_test_loader,
     generate_train_loader,
     generate_train_validate_split,
+    BrainScanDataset,
 )
 from metrics import confusion_matrix
 from models import TransfusionCBRCNN, resnet50
@@ -208,13 +209,10 @@ def main(
     fine_tune: bool,
 ):
     reproducibility()
-    # skullstrip_list = create_skullstrip_list(usable_dir=Path(data_path))
-    # dataset = SkullstripDataset(skullstrips=skullstrip_list)
-    # augmented_data = augment_data(datapoints=skullstrip_list)
-    train_augdata = load_pickle_shelve(
-        "/data/gpfs-1/users/goellerd_c/work/V2_aug_data_bigx1"
-    )
-    train_data, valid_data = split_data(data=train_augdata)
+    folder_path = Path('/Volumes/PortableSSD/procesed_usable')
+    pickle_paths = list(folder_path.glob('*.pkl'))
+    brain_scan_dataset = BrainScanDataset(pickle_paths=pickle_paths)
+    #train_data, valid_data = split_data(data=train_augdata)
     train_dataset = TestSkullstripDataset(train_data)
     valid_dataset = TestSkullstripDataset(valid_data)
 
