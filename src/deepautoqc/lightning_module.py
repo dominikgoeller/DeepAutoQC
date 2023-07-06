@@ -1,3 +1,4 @@
+import pickle
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -11,7 +12,17 @@ from sklearn.model_selection import train_test_split
 from torch import nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from utils import load_from_pickle
+
+
+def load_from_pickle(file_path: str) -> list:
+    """
+    This function loads the augmented data from a pickle file
+    :param file_path: str path where the pickle file is stored
+    :return: list of tuples (t1w, mask, new_label)
+    """
+    with open(file_path, "rb") as file:
+        augmented_data = pickle.load(file)
+    return augmented_data
 
 
 class MRIAutoQC(pl.LightningModule):  # type: ignore
@@ -101,10 +112,12 @@ def generate_train_test_sets(usable_path: Path, unusable_path: Path):
 
 path_1 = Path("/Volumes/PortableSSD/procesed_usable")
 path_2 = Path("/Volumes/PortableSSD/processed_unusable")
+path_3 = Path("/data/gpfs-1/users/goellerd_c/work/data")
 
-train_set, test_set = generate_train_test_sets(usable_path=path_1, unusable_path=path_2)
+train_set, test_set = generate_train_test_sets(usable_path=path_3, unusable_path=path_3)
 
 train_set_size = int(len(train_set) * 0.8)
+print(train_set_size)
 valid_set_size = len(train_set) - train_set_size
 
 # split the train set into two
@@ -113,13 +126,15 @@ train_set, valid_set = data.random_split(
     train_set, [train_set_size, valid_set_size], generator=seed
 )
 
-train_loader = DataLoader(train_set)
-valid_loader = DataLoader(valid_set, num_workers=12)
-test_loader = DataLoader(test_set)
+train_loader = DataLoader(train_set, batch_size=1)
+valid_loader = DataLoader(valid_set, batch_size=1, num_workers=12)
+test_loader = DataLoader(test_set, batch_size=1)
 
 my_model = MRIAutoQC(model_name="tall")
 
-trainer = pl.Trainer(accelerator="auto", deterministic=True, enable_progress_bar=True)
+trainer = pl.Trainer(
+    accelerator="auto", deterministic=True, enable_progress_bar=True, max_epochs=3
+)
 trainer.fit(
     model=my_model, train_dataloaders=train_loader, val_dataloaders=valid_loader
 )
