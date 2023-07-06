@@ -35,6 +35,7 @@ class MRIAutoQC(pl.LightningModule):  # type: ignore
         self.lr = lr
 
     def forward(self, x):
+        x = x.float()
         return self.model(x)
 
     def configure_optimizers(self) -> Any:
