@@ -34,5 +34,3 @@ readme = {file = "README.md"}
 [tool.isort]
 profile = "black"
 line_length = 79
-[tool.mypy]
-disallow_untyped_defs = false
