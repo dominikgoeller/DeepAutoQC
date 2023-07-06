@@ -1,7 +1,9 @@
 import os
 import pickle
 import random
+import re
 import shelve
+from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
 
@@ -16,13 +18,6 @@ from scipy import ndimage
 from torch import nn
 from torch.optim import Optimizer
 from torchvision.models import ResNet
-
-# from transforms import (
-#    BadScannerBrain,
-#    BadSyntheticBrain,
-#    GoodScannerBrain,
-#    GoodSyntheticBrain,
-# )
 
 
 class EarlyStopping:
@@ -168,19 +163,17 @@ def load_model(model_filepath: Path):
     """Load model from checkpoint and set to eval mode."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # if you are running on a CPU-only machine, please use torch.load with map_location=torch.device('cpu') to map your storages to the CPU
-    
+
     ckpt = torch.load(model_filepath, map_location=device)
 
     # CREATE MODEL AND LOAD STATE_DICT! Not entire model
-    #model = nn.DataParallel(TransfusionCBRCNN(labels=[0, 1])).to(device=device)
-    #model = nn.DataParallel(resnet50()).to(device=device)
+    # model = nn.DataParallel(TransfusionCBRCNN(labels=[0, 1])).to(device=device)
+    # model = nn.DataParallel(resnet50()).to(device=device)
     model = resnet50().to(device=device)
     model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
     return model
 
-import re
-from collections import OrderedDict
 
 def load_model_new(model_filepath: Path):
     """Load model from checkpoint and set to eval mode."""
@@ -193,8 +186,8 @@ def load_model_new(model_filepath: Path):
     model_name = re.search(r"(?<=/)[^/]*(?=\.)", str(model_filepath)).group(0)
 
     # Load model
-    if  "ResNet" in model_name:
-        #model = nn.DataParallel(resnet50()).to(device=device)
+    if "ResNet" in model_name:
+        # model = nn.DataParallel(resnet50()).to(device=device)
         model = resnet50().to(device=device)
     elif "CBR" in model_name:
         mode = re.search(r"(L_)?(\w+)-CBR", model_name).group(2)
@@ -218,7 +211,6 @@ def load_model_new(model_filepath: Path):
 
     model.eval()
     return model
-
 
 
 def resume_training(model_filepath: Path, model):

@@ -1,36 +1,44 @@
-from copy import deepcopy
-
-from collections import namedtuple
-import numpy as np
-import cairosvg
-from PIL import Image
-import io
-from xml.dom.minidom import parse, Document, Element
-import re
-import pickle
-import base64
-import matplotlib.pyplot as plt
 import argparse
-import os
+import base64
 import glob
-from IPython.display import SVG, display
-import webbrowser
+import io
+import os
+import pickle
+import re
+import sys
 import tkinter as tk
-from tkinter import simpledialog,messagebox
+import webbrowser
+from copy import deepcopy
+from tkinter import messagebox, simpledialog
+from xml.dom.minidom import Document, Element, parse
 
-BrainScan = namedtuple("BrainScan", "id, img, label")
+import cairosvg
+import matplotlib.pyplot as plt
+import numpy as np
+from data_structures import BrainScan
+from PIL import Image
 
-def get_user_input():
+
+def get_user_input() -> None:
     root = tk.Tk()
     root.withdraw()  # hide the main window
     pattern = r"^(\d+,\d+;)*(\d+,\d+)?$"
     while True:
-        user_input = simpledialog.askstring("Input", "Enter rows and columns of unusable images (format: row,column;row,column;...):")
-        root.destroy() 
+        user_input = simpledialog.askstring(
+            "Input",
+            "Enter rows and columns of unusable images (format: row,column;row,column;...):",
+        )
+        root.destroy()
+        if user_input is None:
+            sys.exit(0)
         # If the user input is empty or matches the pattern, return it
-        if not user_input or re.fullmatch(pattern, user_input):
+        elif not user_input or re.fullmatch(pattern, user_input):
             return user_input
-        messagebox.showerror("Invalid input", "Please enter the rows and columns in the correct format (row,column;row,column;...)")
+        messagebox.showerror(
+            "Invalid input",
+            "Please enter the rows and columns in the correct format (row,column;row,column;...)",
+        )
+
 
 def save_to_pickle(data, file_path):
     """
@@ -40,6 +48,7 @@ def save_to_pickle(data, file_path):
     """
     with open(file_path, "wb") as file:
         pickle.dump(data, file)
+
 
 def create_svg_from_elements(elements, image_array):
     doc = Document()
@@ -66,8 +75,12 @@ def find_paths(axes_el: Element):
 
 def parse_svg(report_path: str):
     document = parse(report_path)
-    g_elements = document.getElementsByTagName('g')
-    axes_elements = [elem for elem in g_elements if 'axes' in elem.getAttribute('id') and 'axes_1'!=elem.getAttribute('id')]
+    g_elements = document.getElementsByTagName("g")
+    axes_elements = [
+        elem
+        for elem in g_elements
+        if "axes" in elem.getAttribute("id") and "axes_1" != elem.getAttribute("id")
+    ]
     return axes_elements
 
 
@@ -95,23 +108,21 @@ def svgRead(filename: str or io.BytesIO, image_array) -> np.ndarray:
         output_width=image_array.shape[1],
     )
 
-    res = np.array(
-        Image.open(io.BytesIO(png_content))
-    )
+    res = np.array(Image.open(io.BytesIO(png_content)))
     image_without_alpha = res[:, :, :3]
 
     return image_without_alpha
 
 
 def process_image(image_path, save_path):
-    #BrainScan = namedtuple("BrainScan", "id, img, label")
+    # BrainScan = namedtuple("BrainScan", "id, img, label")
 
     axes_elements = parse_svg(image_path)
     results = []
 
-    #base_image_name = os.path.basename(os.path.dirname(os.path.dirname(image_path)))
-    #base_image_name = os.path.basename(image_path).replace('_skull_strip_report.svg', '')
-    base_image_name = os.path.basename(image_path).split('_skull_strip_report')[0]
+    # base_image_name = os.path.basename(os.path.dirname(os.path.dirname(image_path)))
+    # base_image_name = os.path.basename(image_path).replace('_skull_strip_report.svg', '')
+    base_image_name = os.path.basename(image_path).split("_skull_strip_report")[0]
 
     for i, item in enumerate(axes_elements):
         (image_element,) = item.getElementsByTagName("image")
@@ -150,13 +161,13 @@ def process_image(image_path, save_path):
         for path in find_paths(path_item):
             path_id = path.getAttribute("id")
 
-            if path_id and 'PathCollection' not in path_id:
+            if path_id and "PathCollection" not in path_id:
                 continue
 
             path_transform = inv_affine_matrix
             path.setAttribute("transform", transform_to_svg(path_transform))
             new_paths.append(path)
-        
+
         single_svg = create_svg_from_elements(new_paths, image_array)
         single_img = svgRead(single_svg, image_array)
 
@@ -164,56 +175,49 @@ def process_image(image_path, save_path):
         combined_image[:, :, 0] = image_array.mean(axis=2) / 255
         combined_image[:, :, 1] = (single_img != 0).any(axis=2)
 
-        combined_image = np.flip(combined_image, axis=0) # When displaying with matplotlib.pyplot images were upside down
+        combined_image = np.flip(
+            combined_image, axis=0
+        )  # When displaying with matplotlib.pyplot images were upside down
 
         row = (i // 7) + 1
-        column = (i % 7) + 1 
+        column = (i % 7) + 1
 
-        result_id = f'{base_image_name}_report-skull_{row}-{column}'
+        result_id = f"{base_image_name}_report-skull_{row}-{column}"
 
-        result = BrainScan(id=result_id, img=combined_image, label='usable')
+        result = BrainScan(id=result_id, img=combined_image, label="usable")
         results.append(result)
     if ARGS.user:
-        #display_svg_for_user(image_path)
-        #show_svg(path=image_path)
-        #display_images_for_user(axes_elements, image_array)
-        webbrowser.open('file://'+ image_path)
-
-        # Ask user for unusable images
-        #unusable_input = input("Enter row and column of unusable images (as row,column tuples separated by space): ")
-        #unusable_positions = [tuple(map(int, pos.split(','))) for pos in unusable_input.split()]
+        webbrowser.open("file://" + image_path)
 
         user_input = get_user_input()
         if user_input:
-            user_tuples = user_input.split(';')  # Split input into tuples
-            parsed_tuples = [tuple(map(int, t.split(','))) for t in user_tuples]
+            user_tuples = user_input.split(";")  # Split input into tuples
+            parsed_tuples = [tuple(map(int, t.split(","))) for t in user_tuples]
 
             # Subtract 1 from positions because of 0-based indexing
-            unusable_positions = [(row-1, col-1) for row, col in parsed_tuples]
+            unusable_positions = [(row - 1, col - 1) for row, col in parsed_tuples]
 
             # Update labels of unusable images
             for i, result in enumerate(results):
                 row, col = i // 7, i % 7
                 if (row, col) in unusable_positions:
-                    results[i] = result._replace(label='unusable')
-    pickle_filename = f'{base_image_name}_report-skull.pkl'
+                    results[i] = result._replace(label="unusable")
+    pickle_filename = f"{base_image_name}_report-skull.pkl"
     pickle_path = os.path.join(save_path, pickle_filename)
     save_to_pickle(data=results, file_path=pickle_path)
 
 
 def find_skull_strip_reports(base_path):
-    # Make sure path is absolute
     base_path = os.path.abspath(base_path)
-    
-    # Glob pattern to find all 'skull_strip_report.svg' files in any directories under 'sub-' directories
-    #pattern = os.path.join(base_path, "sub-*", "*", "sub-*_skull_strip_report.svg")
+
+    # Glob pattern to find all 'skull_strip_report.svg' files in any directories
+    # pattern = os.path.join(base_path, "sub-*", "*", "sub-*_skull_strip_report.svg")
     pattern = os.path.join(base_path, "*_skull_strip_report.svg")
-    
+
     # Find all matching paths
     report_paths = glob.glob(pattern)
-    
-    return report_paths
 
+    return report_paths
 
 
 def parse_args():
@@ -238,17 +242,20 @@ def parse_args():
 
     return args
 
+
 if __name__ == "__main__":
     global ARGS
     ARGS = parse_args()
-    print(f'Arguments: {ARGS}')
-    #base_path = "/Volumes/PortableSSD/ds-pnc_chunk-9_reports/"
-    #base_path = "/Volumes/PortableSSD/unusable_svg/"
+    print(f"Arguments: {ARGS}")
+    # base_path = "/Volumes/PortableSSD/ds-pnc_chunk-9_reports/"
+    # base_path = "/Volumes/PortableSSD/unusable_svg/"
     report_paths = find_skull_strip_reports(ARGS.datapath)
     print(len(report_paths))
     for path in report_paths:
         try:
-            process_image(image_path=path, save_path=ARGS.savepath)  # pass the path from report_paths
+            process_image(
+                image_path=path, save_path=ARGS.savepath
+            )  # pass the path from report_paths
         except Exception as e:
             print(f"Error processing {path}: {e}")
             continue
