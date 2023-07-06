@@ -20,5 +20,7 @@ class BrainScanDataset(Dataset):
 
         img: npt.NDArray = item.img
         label = item.label
+        label_to_int = {"usable": 0, "unusable": 1}
+        label = label_to_int[label]
         img: npt.NDArray = img.transpose((2, 0, 1))
         return img, label
