@@ -145,7 +145,7 @@ def main(args):
         usable_path = Path("/data/gpfs-1/users/goellerd_c/work/data")
         unusable_path = usable_path
 
-    NUM_WORKERS = 64
+    NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
 
     dm = BrainScanDataModule(
         usable_path=usable_path,
