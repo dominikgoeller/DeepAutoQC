@@ -1,6 +1,12 @@
 # Deep-AutoQC
-Image classification for the ENIGMA HALFpipe project at Charité  using deep learning - BA Thesis
+Image classification for the ENIGMA HALFpipe project at Charité  using deep learning - Bachelor Thesis
 DeepAutoQC aims to assist researchers in classifying skull strip reports as either usable (good) or unusable (bad).
+
+# Introduction
+
+Welcome to this project. It started out as the basis for a bachelor's thesis and has since then been continuously evolving. The original, stable version used for the thesis can be found in the `archive` branch.
+
+The current focus is to improve the existing work. We're in the process of transitioning the code to use the PyTorch Lightning framework. Please note that this project is currently a work in progress.
 
 ## Folder Structure
 ````
