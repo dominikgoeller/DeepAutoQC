@@ -13,7 +13,6 @@ from tkinter import messagebox, simpledialog
 from xml.dom.minidom import Document, Element, parse
 
 import cairosvg
-import matplotlib.pyplot as plt
 import numpy as np
 from data_structures import BrainScan
 from PIL import Image

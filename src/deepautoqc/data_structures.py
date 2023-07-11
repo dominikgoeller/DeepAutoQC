@@ -1,7 +1,7 @@
 import pickle
 from collections import namedtuple
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import pytorch_lightning as pl
 import torch

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import torch
-from args import config
 from torch import nn
 from torch.nn.functional import adaptive_avg_pool2d, adaptive_max_pool2d
 from torchvision import models
@@ -30,6 +29,7 @@ def resnet50(requires_grad: bool = False, weights_path=weight_path):
     # model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
     model = models.resnet50()
     # model.load_state_dict(torch.load(DEFAULT_WEIGHTS))
+    NUM_CLASSES = 2
     model.load_state_dict(torch.load(weights_path))
     if (
         not requires_grad
@@ -47,9 +47,8 @@ def resnet50(requires_grad: bool = False, weights_path=weight_path):
             module.requires_grad = True
     num_ftrs = model.fc.in_features
     # model.avgpool = AdaptiveAvgPool2d(output_size=(1, 1)) which handles input tensors of all sizes and adapts its pooling to the specified output dims
-    #model.fc = nn.Linear(num_ftrs, config.num_classes)
-    model.fc = nn.Sequential(nn.Dropout(p=0.5),nn.Linear(num_ftrs,
-        config.num_classes))
+    # model.fc = nn.Linear(num_ftrs, config.num_classes)
+    model.fc = nn.Sequential(nn.Dropout(p=0.5), nn.Linear(num_ftrs, NUM_CLASSES))
     print(
         f"Finished loading model with {count_parameters(model):,} trainable parameters"
     )
