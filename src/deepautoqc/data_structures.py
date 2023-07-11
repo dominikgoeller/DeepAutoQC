@@ -1,6 +1,7 @@
 from collections import namedtuple
 from typing import List, Tuple
 
+import torch
 from numpy import typing as npt
 from torch.utils.data import Dataset
 
@@ -23,4 +24,5 @@ class BrainScanDataset(Dataset):
         label_to_int = {"usable": 0, "unusable": 1}
         label = label_to_int[label]
         img: npt.NDArray = img.transpose((2, 0, 1))
+        img = torch.from_numpy(img)
         return img, label
