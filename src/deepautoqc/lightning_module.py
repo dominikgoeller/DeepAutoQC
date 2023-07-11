@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 
 import lightning.pytorch as pl
 import torch
-from data_structures import BrainScanDataModule
+from data_structures import BrainScan, BrainScanDataModule
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from models import TransfusionCBRCNN
 from torch import nn
