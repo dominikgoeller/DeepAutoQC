@@ -67,12 +67,18 @@ class BrainScanDataset(Dataset):
 
 class BrainScanDataModule(pl.LightningDataModule):
     def __init__(
-        self, usable_path: Path, unusable_path: Path, batch_size: int, seed: int = 111
+        self,
+        usable_path: Path,
+        unusable_path: Path,
+        batch_size: int,
+        num_workers: int,
+        seed: int = 111,
     ):
         super().__init__()
         self.usable_path = usable_path
         self.unusable_path = unusable_path
         self.batch_size = batch_size
+        self.num_workers = num_workers
         self.seed = seed
 
     def prepare_data(self):
@@ -124,17 +130,26 @@ class BrainScanDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(
-            self.train_set, batch_size=self.batch_size, collate_fn=collate_fn
+            self.train_set,
+            batch_size=self.batch_size,
+            collate_fn=collate_fn,
+            num_workers=self.num_workers,
         )
 
     def val_dataloader(self):
         return DataLoader(
-            self.valid_set, batch_size=self.batch_size, collate_fn=collate_fn
+            self.valid_set,
+            batch_size=self.batch_size,
+            collate_fn=collate_fn,
+            num_workers=self.num_workers,
         )
 
     def test_dataloader(self):
         return DataLoader(
-            self.test_set, batch_size=self.batch_size, collate_fn=collate_fn
+            self.test_set,
+            batch_size=self.batch_size,
+            collate_fn=collate_fn,
+            num_workers=self.num_workers,
         )
 
 

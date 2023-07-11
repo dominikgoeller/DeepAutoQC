@@ -138,8 +138,13 @@ def main(args):
         usable_path = Path("/data/gpfs-1/users/goellerd_c/work/data")
         unusable_path = usable_path
 
+    NUM_WORKERS = 64
+
     dm = BrainScanDataModule(
-        usable_path=usable_path, unusable_path=unusable_path, batch_size=12
+        usable_path=usable_path,
+        unusable_path=unusable_path,
+        batch_size=12,
+        num_workers=NUM_WORKERS,
     )
     dm.prepare_data()
     dm.setup()
