@@ -1,62 +1,16 @@
-import pickle
+import argparse
 from pathlib import Path
 from typing import Any, List, Optional
 
 import lightning.pytorch as pl
 import torch
-import torch.utils.data as data
-from data_structures import BrainScan, BrainScanDataset
+from data_structures import BrainScanDataModule
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from models import TransfusionCBRCNN
-from sklearn.model_selection import train_test_split
 from torch import nn
-from torch.nn.functional import pad
 from torch.optim import Adam
-from torch.utils.data import DataLoader
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification.accuracy import Accuracy
-
-
-def collate_fn(batch):
-    # Find the maximum height and width in this batch
-    max_h = max([img.shape[1] for img, _ in batch])
-    max_w = max([img.shape[2] for img, _ in batch])
-
-    padded_imgs = []
-    labels = []
-
-    for img, label in batch:
-        # img = torch.from_numpy(img)
-        pad_h = max_h - img.shape[1]
-        pad_w = max_w - img.shape[2]
-
-        pad_h_up = pad_h // 2
-        pad_h_down = pad_h - pad_h_up
-        pad_w_left = pad_w // 2
-        pad_w_right = pad_w - pad_w_left
-
-        # Pad the image symmetrically
-        padded_img = pad(img, pad=(pad_w_left, pad_w_right, pad_h_up, pad_h_down))
-
-        padded_imgs.append(padded_img)
-        labels.append(label)
-
-    # Stack images and labels
-    padded_imgs = torch.stack(padded_imgs)
-    labels = torch.tensor(labels)
-
-    return padded_imgs, labels
-
-
-def load_from_pickle(file_path: str) -> list:
-    """
-    This function loads the augmented data from a pickle file
-    :param file_path: str path where the pickle file is stored
-    :return: list of tuples (t1w, mask, new_label)
-    """
-    with open(file_path, "rb") as file:
-        augmented_data = pickle.load(file)
-    return augmented_data
 
 
 class MRIAutoQC(pl.LightningModule):  # type: ignore
@@ -152,71 +106,58 @@ class MRIAutoQC(pl.LightningModule):  # type: ignore
         return Adam(params=self.model.parameters(), lr=self.lr)
 
 
-def generate_train_test_sets(usable_path: Path, unusable_path: Path):
-    pickle_paths = list(usable_path.glob("*.pkl")) + list(unusable_path.glob("*.pkl"))
-    data: List[BrainScan] = []
-    for p in pickle_paths:
-        datapoints: List[BrainScan] = load_from_pickle(p)
-        data.extend(datapoints)
-    print(f"Loaded data size: {len(data)}")
-
-    ids = [scan.id for scan in data]
-    imgs = [scan.img for scan in data]
-    labels = [scan.label for scan in data]
-
-    (
-        train_ids,
-        test_ids,
-        train_imgs,
-        test_imgs,
-        train_labels,
-        test_labels,
-    ) = train_test_split(
-        ids, imgs, labels, test_size=0.2, random_state=111, stratify=labels
+def parse_args():
+    parser = argparse.ArgumentParser(description="Training Script")
+    parser.add_argument(
+        "-dl",
+        "--data_location",
+        type=str,
+        choices=["local", "cluster"],
+        required=True,
+        help="Choose between 'local' and 'cluster' to determine the data paths.",
+    )
+    parser.add_argument(
+        "-mn",
+        "--model_name",
+        type=str,
+        choices=["small", "tiny", "wide", "tall"],
+        required=True,
+        help="Choose between 'small', 'tiny', 'wide', 'tall' to determine model architecture.",
     )
 
-    train_data = [
-        BrainScan(id, img, label)
-        for id, img, label in zip(train_ids, train_imgs, train_labels)
-    ]
-    test_data = [
-        BrainScan(id, img, label)
-        for id, img, label in zip(test_ids, test_imgs, test_labels)
-    ]
+    args = parser.parse_args()
 
-    train_brain_scan_dataset = BrainScanDataset(brain_scan_list=train_data)
-    test_brain_scan_dataset = BrainScanDataset(brain_scan_list=test_data)
-
-    return train_brain_scan_dataset, test_brain_scan_dataset
+    return args
 
 
-path_1 = Path("/Volumes/PortableSSD/procesed_usable")
-path_2 = Path("/Volumes/PortableSSD/processed_unusable")
-# path_3 = Path("/data/gpfs-1/users/goellerd_c/work/data")
+def main(args):
+    if args.data_location == "local":
+        usable_path = Path("/Volumes/PortableSSD/procesed_usable")
+        unusable_path = Path("/Volumes/PortableSSD/processed_unusable")
+    elif args.data_location == "cluster":
+        usable_path = Path("/data/gpfs-1/users/goellerd_c/work/data")
+        unusable_path = usable_path
 
-train_set, test_set = generate_train_test_sets(usable_path=path_1, unusable_path=path_2)
+    dm = BrainScanDataModule(
+        usable_path=usable_path, unusable_path=unusable_path, batch_size=12
+    )
+    dm.prepare_data()
+    dm.setup()
 
-train_set_size = int(len(train_set) * 0.8)
-print(train_set_size)
-valid_set_size = len(train_set) - train_set_size
+    my_model = MRIAutoQC(model_name=args.model_name)
 
-# split the train set into two
-seed = torch.Generator().manual_seed(42)
-train_set, valid_set = data.random_split(
-    train_set, [train_set_size, valid_set_size], generator=seed
-)
+    trainer = pl.Trainer(
+        accelerator="auto", deterministic=True, enable_progress_bar=True, max_epochs=3
+    )
 
-train_loader = DataLoader(train_set, batch_size=12, collate_fn=collate_fn)
-valid_loader = DataLoader(valid_set, batch_size=12, collate_fn=collate_fn)
-test_loader = DataLoader(test_set, batch_size=12, collate_fn=collate_fn)
+    trainer.fit(
+        model=my_model,
+        train_dataloaders=dm.train_dataloader(),
+        val_dataloaders=dm.val_dataloader(),
+    )
+    trainer.test(my_model, dataloaders=dm.test_dataloader())
 
-my_model = MRIAutoQC(model_name="tall")
 
-trainer = pl.Trainer(
-    accelerator="auto", deterministic=True, enable_progress_bar=True, max_epochs=3
-)
-
-trainer.fit(
-    model=my_model, train_dataloaders=train_loader, val_dataloaders=valid_loader
-)
-trainer.test(my_model, dataloaders=test_loader)
+if __name__ == "__main__":
+    ARGS = parse_args()
+    main(ARGS)
