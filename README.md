@@ -39,28 +39,56 @@ DeepAutoQC/
 | - packaging files and pre-commit configurations
 ````
 
-## Usage
-The code in this project can be used by running either `train.py` script or `test.py` script within the command line.
-First of all, you should go to `args.py` and
-## For Training
-~~* set the `DATA_PATH` constant to a folder only containing corresponding t1w.nii(.gz), mask.nii(.gz) files as this is required for a training run~~
-* specify the hyperparameters used in training which are not defined by the command line
-* set `EARLYSTOP_PATH` to your desired location where model_weights, optimizer_weights and more parameters will be saved
+# Training Process
 
-Then, run `python3 train.py -o OPTIMIZER[ADAM,ADAN,SGD] -e EPOCHS -b BATCHSIZE -lr LEARNINGRATE -ft FINETUNE[BOOLEAN]` with your desired options to start your training process. The progress is logged on the command line. You can get help for each command.
+This script is designed for training the MRI Quality Control (MRIAutoQC) model on brain scan data. The main parts of this process are argument parsing, data preparation, model training, and testing.
 
-## Using multiple GPUs
-You can enable multiple GPUs for training by setting `n_gpus` in `args.py`. If `n_gpus` is set to a value not available on your machine the function `device_preparation` will set `torch.device` to either `"cpu"` or `"cuda"` using all available GPUs.
+## Argument Parsing
 
-## Resume Training
-You can resume training from a previously saved checkpoint by:
-`python train.py -r ckpt/path`
+The script accepts several arguments that allow you to customize the training process:
 
-## For Predictions
-* check the `ckpts/` folder and set `MODEL_CKPT` to your desired `*model.pt` which will be loaded for predictions
+- `-dl` or `--data_location`: Choose between `local` and `cluster` to determine the data paths. This determines whether the script uses data stored locally or on a cluster.
+- `-mn` or `--model_name`: Selects the architecture of the Transfusion model used for training. Options include `small`, `tiny`, `wide`, and `tall`.
+- `-e` or `--epochs`: The number of epochs to train the network. The default is 20.
 
-Then, run `python3 test.py [-h] -i INPUT`. Remember `the following arguments are required: -i/--input` should contain the path to your svg file.
-Check `predictions` folder for your output.
+## Data Preparation
 
-## Weights
-* Weights of every trained model are stored in `/src/deepautoqc/weights` with their respective names and the dataset on which they got trained on
+The data for the model is prepared using the `BrainScanDataModule`. This PyTorch Lightning DataModule is responsible for loading the brain scan data from either a local path or a cluster, and preparing it for training.
+
+## Model Training
+
+The `MRIAutoQC` model is trained using the PyTorch Lightning Trainer. The trainer is set up with several options:
+
+- `accelerator="auto"`: Automatically selects the appropriate hardware accelerator (CPU, GPU, or TPU) available on the machine.
+- `deterministic="warn"`: If any operations are performed that could cause non-deterministic behavior, a warning will be raised.
+- `enable_progress_bar=True`: Enables a progress bar to be displayed during training.
+- `max_epochs=args.epochs`: Sets the maximum number of epochs for training.
+
+The trainer is then used to fit the model on the training and validation data, which are obtained from the DataModule.
+
+## Testing
+
+After training, the model is tested on the test data, which is again obtained from the DataModule.
+
+## Running the Script
+
+To run the script, you can use a command similar to the following:
+
+```
+python train.py --data_location local --model_name small --epochs 30
+```
+
+This command would train the `small` model on `local` data for `30` epochs. Adjust the arguments as needed for your specific use case.
+
+~~## Resume Training~~
+~~You can resume training from a previously saved checkpoint by:~~
+~~`python train.py -r ckpt/path`~~
+
+~~## For Predictions~~
+~~* check the `ckpts/` folder and set `MODEL_CKPT` to your desired `*model.pt` which will be loaded for predictions~~
+
+~~Then, run `python3 test.py [-h] -i INPUT`. Remember `the following arguments are required: -i/--input` should contain the path to your svg file.~~
+~~Check `predictions` folder for your output.~~
+
+~~## Weights~~
+~~* Weights of every trained model are stored in `/src/deepautoqc/weights` with their respective names and the dataset on which they got trained on~~
