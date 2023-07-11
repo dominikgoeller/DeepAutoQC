@@ -124,6 +124,13 @@ def parse_args():
         required=True,
         help="Choose between 'small', 'tiny', 'wide', 'tall' to determine model architecture.",
     )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        default=20,
+        help="number of epochs to train our network for",
+    )
 
     args = parser.parse_args()
 
@@ -152,7 +159,10 @@ def main(args):
     my_model = MRIAutoQC(model_name=args.model_name)
 
     trainer = pl.Trainer(
-        accelerator="auto", deterministic="warn", enable_progress_bar=True, max_epochs=3
+        accelerator="auto",
+        deterministic="warn",
+        enable_progress_bar=True,
+        max_epochs=args.epochs,
     )
 
     trainer.fit(
