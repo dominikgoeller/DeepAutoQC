@@ -1,0 +1,18 @@
+# Build system packages.
+setuptools_scm[toml]>=6.2
+
+# ML frameworks
+lightning>=2.0.4
+pytorch_lightning>=2.0.4
+scikit_learn>=1.2.2
+torch>=2.0.1
+torchmetrics>=1.0.0
+torchvision>=0.15.2
+adan_pytorch>=0.1.0
+
+# Image manipulation
+CairoSVG>=2.7.0
+Pillow>=10.0.0
+
+# Scientific computing
+numpy>=1.24.3
