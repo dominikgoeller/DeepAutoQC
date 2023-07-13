@@ -27,7 +27,6 @@ src/*.egg-info/
 src/deepautoqc/lightning_logs
 .mypy_cache
 src/deepautoqc/visualizations
-
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
