@@ -1,52 +1,21 @@
-import argparse
 import base64
-import glob
 import io
 import os
-import pickle
 import re
-import sys
-import tkinter as tk
 import webbrowser
 from copy import deepcopy
-from tkinter import messagebox, simpledialog
-from xml.dom.minidom import Document, Element, parse
+from typing import Any, Union
+from xml.dom.minidom import Document, Element
 
 import cairosvg
 import numpy as np
-from data_structures import BrainScan
+import numpy.typing as npt
 from PIL import Image
+from script_utils import find_reports, get_user_input, parse_args, parse_svg
 
-
-def get_user_input() -> None:
-    root = tk.Tk()
-    root.withdraw()  # hide the main window
-    pattern = r"^(\d+,\d+;)*(\d+,\d+)?$"
-    while True:
-        user_input = simpledialog.askstring(
-            "Input",
-            "Enter rows and columns of unusable images (format: row,column;row,column;...):",
-        )
-        root.destroy()
-        if user_input is None:
-            sys.exit(0)
-        # If the user input is empty or matches the pattern, return it
-        elif not user_input or re.fullmatch(pattern, user_input):
-            return user_input
-        messagebox.showerror(
-            "Invalid input",
-            "Please enter the rows and columns in the correct format (row,column;row,column;...)",
-        )
-
-
-def save_to_pickle(data, file_path):
-    """
-    This function saves the augmented data to a pickle file
-    :param augmented_data: List of tuples (t1w, mask, new_label)
-    :param file_path: str path where to save the pickle file
-    """
-    with open(file_path, "wb") as file:
-        pickle.dump(data, file)
+# from data_structures import BrainScan
+from deepautoqc.data_structures import BrainScan
+from deepautoqc.utils import save_to_pickle
 
 
 def create_svg_from_elements(elements, image_array):
@@ -72,17 +41,6 @@ def find_paths(axes_el: Element):
         yield path
 
 
-def parse_svg(report_path: str):
-    document = parse(report_path)
-    g_elements = document.getElementsByTagName("g")
-    axes_elements = [
-        elem
-        for elem in g_elements
-        if "axes" in elem.getAttribute("id") and "axes_1" != elem.getAttribute("id")
-    ]
-    return axes_elements
-
-
 def parse_transform(transform: str):
     transform = transform.removeprefix("matrix(")
     transform = transform.removesuffix(")")
@@ -100,7 +58,9 @@ def transform_to_svg(matrix) -> str:
     )
 
 
-def svgRead(filename: str or io.BytesIO, image_array) -> np.ndarray:
+def svgRead(
+    filename: Union[str, io.BytesIO], image_array: npt.NDArray[np.float64]
+) -> npt.NDArray[Any]:
     png_content = cairosvg.svg2png(
         bytestring=filename,
         output_height=image_array.shape[0],
@@ -113,15 +73,16 @@ def svgRead(filename: str or io.BytesIO, image_array) -> np.ndarray:
     return image_without_alpha
 
 
-def process_image(image_path, save_path):
-    # BrainScan = namedtuple("BrainScan", "id, img, label")
-
+def process_image(image_path: str, save_path: str) -> None:
     axes_elements = parse_svg(image_path)
     results = []
 
-    # base_image_name = os.path.basename(os.path.dirname(os.path.dirname(image_path)))
-    # base_image_name = os.path.basename(image_path).replace('_skull_strip_report.svg', '')
     base_image_name = os.path.basename(image_path).split("_skull_strip_report")[0]
+    dataset_dir_match = re.search(r"(ds-[\w-]+)", image_path)
+    if dataset_dir_match is not None:
+        dataset_name = dataset_dir_match.group()
+    else:
+        dataset_name = ""
 
     for i, item in enumerate(axes_elements):
         (image_element,) = item.getElementsByTagName("image")
@@ -181,7 +142,7 @@ def process_image(image_path, save_path):
         row = (i // 7) + 1
         column = (i % 7) + 1
 
-        result_id = f"{base_image_name}_report-skull_{row}-{column}"
+        result_id = f"{dataset_name}_{base_image_name}_report-skull_{row}-{column}"
 
         result = BrainScan(id=result_id, img=combined_image, label="usable")
         results.append(result)
@@ -201,54 +162,16 @@ def process_image(image_path, save_path):
                 row, col = i // 7, i % 7
                 if (row, col) in unusable_positions:
                     results[i] = result._replace(label="unusable")
-    pickle_filename = f"{base_image_name}_report-skull.pkl"
+    pickle_filename = f"{dataset_name}_{base_image_name}_report-skull.pkl"
     pickle_path = os.path.join(save_path, pickle_filename)
     save_to_pickle(data=results, file_path=pickle_path)
 
 
-def find_skull_strip_reports(base_path):
-    base_path = os.path.abspath(base_path)
-
-    # Glob pattern to find all 'skull_strip_report.svg' files in any directories
-    # pattern = os.path.join(base_path, "sub-*", "*", "sub-*_skull_strip_report.svg")
-    pattern = os.path.join(base_path, "*_skull_strip_report.svg")
-
-    # Find all matching paths
-    report_paths = glob.glob(pattern)
-
-    return report_paths
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="SVG Parse Script")
-    parser.add_argument(
-        "-d",
-        "--datapath",
-        help="File Path to SVG",
-    )
-    parser.add_argument(
-        "-s",
-        "--savepath",
-        help="Path to save pickle",
-    )
-    parser.add_argument(
-        "-u",
-        "--user",
-        action="store_true",
-        help="User review of images",
-    )
-    args = parser.parse_args()
-
-    return args
-
-
 if __name__ == "__main__":
-    global ARGS
     ARGS = parse_args()
     print(f"Arguments: {ARGS}")
-    # base_path = "/Volumes/PortableSSD/ds-pnc_chunk-9_reports/"
-    # base_path = "/Volumes/PortableSSD/unusable_svg/"
-    report_paths = find_skull_strip_reports(ARGS.datapath)
+    report_type = "skull_strip"
+    report_paths = find_reports(ARGS.datapath, report_type=report_type)
     print(len(report_paths))
     for path in report_paths:
         try:
