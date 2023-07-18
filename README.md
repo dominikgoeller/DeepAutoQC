@@ -57,20 +57,22 @@ These scripts extract (and processes) image data and associated metadata from th
 
 ### How to use <a name="using_scripts"></a>
 
-To use these scripts, run them with the `-d` flag specifying the directory containing the SVG reports and the `-s` flag specifying the directory where the processed images and pickle files will be saved.
+After installing the package using `pip install .` from the main directory, the scripts can be accessed from the command line.
+
+Use the `skullstrip_parser` and `tsnr_parser` commands with the `-d` flag specifying the directory containing the SVG reports and the `-s` flag specifying the directory where the processed images and pickle files will be saved.
 
 For example:
 
 ```
-python skull-strip_parser.py -d /path/to/reports -s /path/to/save/directory
-python tsnr_parser.py -d /path/to/reports -s /path/to/save/directory
+skullstrip_parser.py -d /path/to/reports -s /path/to/save/directory
+tsnr_parser.py -d /path/to/reports -s /path/to/save/directory
 ```
 
 If you want to review the images manually and label them as usable or unusable, add the `-u` flag:
 
 ```
-python skull-strip_parser.py -d /path/to/reports -s /path/to/save/directory -u
-python tsnr_parser.py -d /path/to/reports -s /path/to/save/directory -u
+skullstrip_parser.py -d /path/to/reports -s /path/to/save/directory -u
+tsnr_parser.py -d /path/to/reports -s /path/to/save/directory -u
 ```
 
 ### Output <a name="output"></a>

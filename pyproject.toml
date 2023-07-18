@@ -19,6 +19,10 @@ classifiers = [
 [project.urls]
 repository = "https://github.com/dominikgoeller/DeepAutoQC"
 
+[project.scripts]
+skullstrip_parser = "deepautoqc.scripts.skullstrip_parser:main"
+tsnr_parser = "deepautoqc.scripts.tsnr_report_parser:main"
+
 [build-system]
 # sync with requirements.in!!
 requires = ["setuptools>=62", "setuptools_scm[toml]>=6.2"]

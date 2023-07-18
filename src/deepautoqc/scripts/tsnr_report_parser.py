@@ -6,13 +6,19 @@ import webbrowser
 from pathlib import Path
 
 import numpy as np
-from data_structures import BrainScan
 from PIL import Image
-from script_utils import find_reports, get_user_input, parse_args, parse_svg
-from utils import save_to_pickle
+
+from deepautoqc.data_structures import BrainScan
+from deepautoqc.scripts.script_utils import (
+    find_reports,
+    get_user_input,
+    parse_args,
+    parse_svg,
+)
+from deepautoqc.utils import save_to_pickle
 
 
-def process_image(image_path: str, save_path: str) -> None:
+def process_image(image_path: str, save_path: str, ARGS) -> None:
     axes_elements = parse_svg(image_path)
     results = []
     base_image_name = Path(image_path).name.split("_tsnr_rpt")[0]
@@ -61,7 +67,7 @@ def find_tsnr_reports(base_path):
     return report_paths
 
 
-if __name__ == "__main__":
+def main():
     ARGS = parse_args()
     print(f"Arguments: {ARGS}")
     report_type = "tsnr"
@@ -69,7 +75,11 @@ if __name__ == "__main__":
     print(len(report_paths))
     for path in report_paths:
         try:
-            process_image(image_path=path, save_path=ARGS.savepath)
+            process_image(image_path=path, save_path=ARGS.savepath, ARGS=ARGS)
         except Exception as e:
             print(f"Error processing {path}: {e}")
             continue
+
+
+if __name__ == "__main__":
+    main()

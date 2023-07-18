@@ -11,10 +11,15 @@ import cairosvg
 import numpy as np
 import numpy.typing as npt
 from PIL import Image
-from script_utils import find_reports, get_user_input, parse_args, parse_svg
 
 # from data_structures import BrainScan
 from deepautoqc.data_structures import BrainScan
+from deepautoqc.scripts.script_utils import (
+    find_reports,
+    get_user_input,
+    parse_args,
+    parse_svg,
+)
 from deepautoqc.utils import save_to_pickle
 
 
@@ -73,7 +78,7 @@ def svgRead(
     return image_without_alpha
 
 
-def process_image(image_path: str, save_path: str) -> None:
+def process_image(image_path: str, save_path: str, ARGS) -> None:
     axes_elements = parse_svg(image_path)
     results = []
 
@@ -167,7 +172,7 @@ def process_image(image_path: str, save_path: str) -> None:
     save_to_pickle(data=results, file_path=pickle_path)
 
 
-if __name__ == "__main__":
+def main():
     ARGS = parse_args()
     print(f"Arguments: {ARGS}")
     report_type = "skull_strip"
@@ -175,9 +180,11 @@ if __name__ == "__main__":
     print(len(report_paths))
     for path in report_paths:
         try:
-            process_image(
-                image_path=path, save_path=ARGS.savepath
-            )  # pass the path from report_paths
+            process_image(image_path=path, save_path=ARGS.savepath, ARGS=ARGS)
         except Exception as e:
             print(f"Error processing {path}: {e}")
             continue
+
+
+if __name__ == "__main__":
+    main()
