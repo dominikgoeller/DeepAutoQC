@@ -77,6 +77,13 @@ def parse_args():
         action="store_true",
         help="User review of images",
     )
+    parser.add_argument(
+        "--label",
+        type=str,
+        default="usable",
+        choices=["usable", "unusable"],
+        help="Automatically sets the label to either usable or unusable",
+    )
     args = parser.parse_args()
 
     return args

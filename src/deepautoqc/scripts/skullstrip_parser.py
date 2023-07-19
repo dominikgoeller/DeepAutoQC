@@ -149,7 +149,7 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
 
         result_id = f"{dataset_name}_{base_image_name}_report-skull_{row}-{column}"
 
-        result = BrainScan(id=result_id, img=combined_image, label="usable")
+        result = BrainScan(id=result_id, img=combined_image, label=ARGS.label)
         results.append(result)
     if ARGS.user:
         webbrowser.open("file://" + image_path)
