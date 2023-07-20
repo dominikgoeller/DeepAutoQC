@@ -17,6 +17,12 @@ BrainScan = namedtuple("BrainScan", "id, img, label")
 
 
 class LogPredictionsCallback(Callback):
+    def state_dict(self):
+        return {}
+
+    def load_state_dict(self, state_dict):
+        pass
+
     def on_validation_batch_end(
         self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
     ):
