@@ -172,7 +172,11 @@ def main():
 
     # log_predictions_callback = LogPredictionsCallback()
 
-    wandb_logger = WandbLogger(project="DeepAutoQC", log_model="all")
+    wandb_logger = WandbLogger(
+        save_dir="/data/gpfs-1/users/goellerd_c/work/wandb_logs",
+        project="DeepAutoQC",
+        log_model="all",
+    )
 
     trainer = pl.Trainer(
         accelerator="auto",
