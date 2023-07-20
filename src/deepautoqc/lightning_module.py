@@ -170,7 +170,7 @@ def main():
 
     my_model = MRIAutoQC(model_name=args.model_name)
 
-    log_predictions_callback = LogPredictionsCallback()
+    # log_predictions_callback = LogPredictionsCallback()
 
     wandb_logger = WandbLogger(project="DeepAutoQC", log_model="all")
 
@@ -180,7 +180,7 @@ def main():
         enable_progress_bar=True,
         max_epochs=args.epochs,
         strategy="auto",
-        callbacks=[log_predictions_callback],
+        # callbacks=[log_predictions_callback],
         logger=wandb_logger,
     )
 
