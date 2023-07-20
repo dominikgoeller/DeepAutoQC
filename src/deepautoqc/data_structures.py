@@ -6,12 +6,51 @@ from typing import List
 import pytorch_lightning as pl
 import torch
 import torch.utils.data as data
+import wandb
 from numpy import typing as npt
+from pytorch_lightning.callbacks import Callback
 from sklearn.model_selection import train_test_split
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader, Dataset
 
 BrainScan = namedtuple("BrainScan", "id, img, label")
+
+
+class LogPredictionsCallback(Callback):
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
+        """Called when the validation batch ends."""
+
+        # Let's log 20 sample image predictions from first batch
+        if batch_idx == 0:
+            n = 20
+            x, y = batch
+            images = [wandb.Image(img.permute(1, 2, 0)) for img in x[:n]]
+            logits = pl_module(x)
+            preds = torch.argmax(logits, dim=1)
+            captions = [
+                f"Ground Truth: {y_i} - Prediction: {y_pred}"
+                for y_i, y_pred in zip(y[:n], preds[:n])
+            ]
+
+            # Log images with `WandbLogger.log_image`
+            trainer.logger.experiment.log(
+                {
+                    "sample_images": [
+                        wandb.Image(img, caption=c) for img, c in zip(images, captions)
+                    ]
+                }
+            )
+
+            # Log predictions as a Table
+            columns = ["image", "ground truth", "prediction"]
+            data = [
+                [wandb.Image(x_i.permute(1, 2, 0)), y_i.item(), y_pred.item()]
+                for x_i, y_i, y_pred in zip(x[:n], y[:n], preds[:n])
+            ]
+            table = wandb.Table(data=data, columns=columns)
+            trainer.logger.experiment.log({"sample_table": table})
 
 
 def collate_fn(batch):
@@ -132,6 +171,7 @@ class BrainScanDataModule(pl.LightningDataModule):
         return DataLoader(
             self.train_set,
             batch_size=self.batch_size,
+            shuffle=True,
             collate_fn=collate_fn,
             num_workers=self.num_workers,
         )
@@ -142,6 +182,7 @@ class BrainScanDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             collate_fn=collate_fn,
             num_workers=self.num_workers,
+            shuffle=False,
         )
 
     def test_dataloader(self):

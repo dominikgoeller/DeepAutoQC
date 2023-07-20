@@ -4,13 +4,19 @@ from typing import Any, List, Optional
 
 import lightning.pytorch as pl
 import torch
-from data_structures import BrainScan, BrainScanDataModule
 from lightning.pytorch.utilities.types import STEP_OUTPUT
-from models import TransfusionCBRCNN
+from pytorch_lightning.loggers import WandbLogger
 from torch import nn
 from torch.optim import Adam
 from torchmetrics import MaxMetric, MeanMetric
 from torchmetrics.classification.accuracy import Accuracy
+
+from deepautoqc.data_structures import (
+    BrainScan,
+    BrainScanDataModule,
+    LogPredictionsCallback,
+)
+from deepautoqc.models import TransfusionCBRCNN
 
 
 class MRIAutoQC(pl.LightningModule):  # type: ignore
@@ -70,7 +76,7 @@ class MRIAutoQC(pl.LightningModule):  # type: ignore
     def on_train_epoch_end(self):
         pass
 
-    def validation_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
+    def validation_step(self, batch, batch_idx):
         loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
@@ -88,7 +94,7 @@ class MRIAutoQC(pl.LightningModule):  # type: ignore
             "val/acc_best", self.val_acc_best.compute(), sync_dist=True, prog_bar=True
         )
 
-    def test_step(self, batch, batch_idx) -> STEP_OUTPUT | None:
+    def test_step(self, batch, batch_idx):
         loss, preds, targets = self.model_step(batch)
 
         # update and log metrics
@@ -137,13 +143,19 @@ def parse_args():
     return args
 
 
-def main(args):
+def main():
+    pl.seed_everything(111)
+    args = parse_args()
     if args.data_location == "local":
         usable_path = Path("/Volumes/PortableSSD/procesed_usable")
         unusable_path = Path("/Volumes/PortableSSD/processed_unusable")
     elif args.data_location == "cluster":
-        usable_path = Path("/data/gpfs-1/users/goellerd_c/work/data")
-        unusable_path = usable_path
+        usable_path = Path(
+            "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_usable"
+        )
+        unusable_path = Path(
+            "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_unusable"
+        )
 
     NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
 
@@ -158,11 +170,20 @@ def main(args):
 
     my_model = MRIAutoQC(model_name=args.model_name)
 
+    log_predictions_callback = LogPredictionsCallback()
+
+    wandb_logger = WandbLogger(
+        save_dir="./wandb_logs", project="DeepAutoQC", log_model="all"
+    )
+
     trainer = pl.Trainer(
         accelerator="auto",
         deterministic="warn",
         enable_progress_bar=True,
         max_epochs=args.epochs,
+        strategy="auto",
+        callbacks=[log_predictions_callback],
+        logger=wandb_logger,
     )
 
     trainer.fit(
@@ -174,5 +195,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    ARGS = parse_args()
-    main(ARGS)
+    main()

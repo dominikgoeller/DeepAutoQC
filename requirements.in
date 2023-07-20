@@ -10,6 +10,9 @@ torchmetrics>=1.0.0
 torchvision>=0.15.2
 adan_pytorch>=0.1.0
 
+# Logger
+wandb>=0.15.5
+
 # Image manipulation
 CairoSVG>=2.7.0
 Pillow>=10.0.0
