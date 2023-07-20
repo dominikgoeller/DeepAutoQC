@@ -8,7 +8,6 @@ import torch
 import torch.utils.data as data
 import wandb
 from numpy import typing as npt
-from pytorch_lightning.callbacks import Callback
 from sklearn.model_selection import train_test_split
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader, Dataset
@@ -16,9 +15,10 @@ from torch.utils.data import DataLoader, Dataset
 BrainScan = namedtuple("BrainScan", "id, img, label")
 
 
-class LogPredictionsCallback(Callback):
+class LogPredictionsCallback(pl.Callback):
     def state_dict(self):
-        return {}
+        state_dict = super().state_dict()
+        return state_dict
 
     def load_state_dict(self, state_dict):
         pass
@@ -180,6 +180,7 @@ class BrainScanDataModule(pl.LightningDataModule):
             shuffle=True,
             collate_fn=collate_fn,
             num_workers=self.num_workers,
+            pin_memory=True,
         )
 
     def val_dataloader(self):
@@ -189,6 +190,7 @@ class BrainScanDataModule(pl.LightningDataModule):
             collate_fn=collate_fn,
             num_workers=self.num_workers,
             shuffle=False,
+            pin_memory=True,
         )
 
     def test_dataloader(self):
@@ -197,6 +199,7 @@ class BrainScanDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             collate_fn=collate_fn,
             num_workers=self.num_workers,
+            pin_memory=True,
         )
 
 
