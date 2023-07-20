@@ -177,7 +177,7 @@ def main():
         dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",  # replace with your desired path
         save_top_k=1,  # Save only the best model
         verbose=True,
-        monitor="val_loss",  # Assume you're monitoring validation loss
+        monitor="val/loss",  # Assume you're monitoring validation loss
         mode="min",  # Aim to minimize validation loss
     )
 
