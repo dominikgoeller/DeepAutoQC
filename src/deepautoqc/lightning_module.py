@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 
 import lightning.pytorch as pl
 import torch
+import wandb
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.utilities.types import STEP_OUTPUT
 from pytorch_lightning.loggers import WandbLogger
@@ -173,14 +174,14 @@ def main():
 
     # log_predictions_callback = LogPredictionsCallback()
 
-    checkpoint_callback = ModelCheckpoint(
-        dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",  # replace with your desired path
-        save_top_k=1,  # Save only the best model
-        verbose=True,
-        monitor="val/loss",  # Assume you're monitoring validation loss
-        mode="min",  # Aim to minimize validation loss
-    )
-
+    # checkpoint_callback = ModelCheckpoint(
+    #    dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",  # replace with your desired path
+    #    save_top_k=1,  # Save only the best model
+    #    verbose=True,
+    #    monitor="val/loss",  # Assume you're monitoring validation loss
+    #    mode="min",  # Aim to minimize validation loss
+    # )
+    wandb.init(save_model=False)
     wandb_logger = WandbLogger(
         project="DeepAutoQC",
         log_model="all",
@@ -193,7 +194,7 @@ def main():
         enable_progress_bar=True,
         max_epochs=args.epochs,
         strategy="auto",
-        callbacks=[checkpoint_callback],
+        # callbacks=[checkpoint_callback],
         logger=wandb_logger,
     )
 
