@@ -184,6 +184,7 @@ def main():
     wandb_logger = WandbLogger(
         project="DeepAutoQC",
         log_model="all",
+        save_dir="/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/wandb_logs",
     )
 
     trainer = pl.Trainer(
