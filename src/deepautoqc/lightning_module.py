@@ -172,9 +172,7 @@ def main():
 
     log_predictions_callback = LogPredictionsCallback()
 
-    wandb_logger = WandbLogger(
-        save_dir="./wandb_logs", project="DeepAutoQC", log_model="all"
-    )
+    wandb_logger = WandbLogger(project="DeepAutoQC", log_model="all")
 
     trainer = pl.Trainer(
         accelerator="auto",
