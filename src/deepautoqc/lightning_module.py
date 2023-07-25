@@ -174,16 +174,18 @@ def main():
 
     # log_predictions_callback = LogPredictionsCallback()
 
-    # checkpoint_callback = ModelCheckpoint(
-    #   dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",  # replace with your desired path
-    #  save_top_k=1,  # Save only the best model
-    # verbose=True,
-    # monitor="val/loss",  # Assume you're monitoring validation loss
-    # mode="min",  # Aim to minimize validation loss
-    # )
+    checkpoint_callback = ModelCheckpoint(
+        dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",
+        save_top_k=1,
+        monitor="val/loss",
+        mode="min",
+        save_weights_only=True,
+        auto_insert_metric_name=False,
+        save_on_train_epoch_end=True,
+    )
     wandb_logger = WandbLogger(
         project="DeepAutoQC",
-        log_model=False,
+        log_model=True,
         save_dir="/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/wandb_logs",
     )
 
@@ -193,7 +195,7 @@ def main():
         enable_progress_bar=True,
         max_epochs=args.epochs,
         strategy="auto",
-        # callbacks=[checkpoint_callback],
+        callbacks=[checkpoint_callback],
         logger=wandb_logger,
     )
 
