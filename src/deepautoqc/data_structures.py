@@ -98,7 +98,7 @@ class BrainScanDataset(Dataset):
         label = item.label
         label_to_int = {"usable": 0, "unusable": 1}
         label = label_to_int[label]
-        img: npt.NDArray = img.transpose((2, 0, 1))
+        img: npt.NDArray = img.transpose((2, 0, 1)) / 255
         img = torch.from_numpy(img)
         return img, label
 

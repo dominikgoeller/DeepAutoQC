@@ -182,6 +182,7 @@ def main():
         save_weights_only=True,
         auto_insert_metric_name=False,
         save_on_train_epoch_end=True,
+        filename=f"{args.model_name}-" + "{epoch}-{step}",
     )
     wandb_logger = WandbLogger(
         project="DeepAutoQC",
