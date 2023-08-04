@@ -37,33 +37,33 @@ class Encoder(nn.Module):
             nn.Conv2d(
                 num_input_channels, c_hid, kernel_size=3, padding=1, stride=2
             ),  # 704x800 => 352x400
-            act_fn(),
+            act_fn,
             nn.Conv2d(c_hid, c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.Conv2d(
                 c_hid, 2 * c_hid, kernel_size=3, padding=1, stride=2
             ),  # 352x400 => 176x200
-            act_fn(),
+            act_fn,
             nn.Conv2d(2 * c_hid, 2 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.Conv2d(
                 2 * c_hid, 4 * c_hid, kernel_size=3, padding=1, stride=2
             ),  # 176x200 => 88x100
-            act_fn(),
+            act_fn,
             nn.Conv2d(4 * c_hid, 4 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.Conv2d(
                 4 * c_hid, 8 * c_hid, kernel_size=3, padding=1, stride=2
             ),  # 88x100 => 44x50
-            act_fn(),
+            act_fn,
             nn.Conv2d(8 * c_hid, 8 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.Conv2d(
                 8 * c_hid, 16 * c_hid, kernel_size=3, padding=1, stride=2
             ),  # 44x50 => 22x25
-            act_fn(),
+            act_fn,
             nn.Conv2d(16 * c_hid, 16 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.Flatten(),  # Image grid to single feature vector
             nn.Linear(16 * 22 * 25 * c_hid, latent_dim),
         )
@@ -96,9 +96,9 @@ class Decoder(nn.Module):
                 padding=1,
                 stride=2,
             ),  # 22x25 => 44x50
-            act_fn(),
+            act_fn,
             nn.Conv2d(16 * c_hid, 16 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.ConvTranspose2d(
                 16 * c_hid,
                 8 * c_hid,
@@ -107,9 +107,9 @@ class Decoder(nn.Module):
                 padding=1,
                 stride=2,
             ),  # 44x50 => 88x100
-            act_fn(),
+            act_fn,
             nn.Conv2d(8 * c_hid, 8 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.ConvTranspose2d(
                 8 * c_hid,
                 4 * c_hid,
@@ -118,9 +118,9 @@ class Decoder(nn.Module):
                 padding=1,
                 stride=2,
             ),  # 88x100 => 176x200
-            act_fn(),
+            act_fn,
             nn.Conv2d(4 * c_hid, 4 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.ConvTranspose2d(
                 4 * c_hid,
                 2 * c_hid,
@@ -129,9 +129,9 @@ class Decoder(nn.Module):
                 padding=1,
                 stride=2,
             ),  # 176x200 => 352x400
-            act_fn(),
+            act_fn,
             nn.Conv2d(2 * c_hid, 2 * c_hid, kernel_size=3, padding=1),
-            act_fn(),
+            act_fn,
             nn.ConvTranspose2d(
                 2 * c_hid,
                 num_input_channels,
