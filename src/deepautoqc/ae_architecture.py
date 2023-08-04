@@ -14,11 +14,17 @@ from lightning.pytorch.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
+from piqa import SSIM
 
 from deepautoqc.data_structures import BrainScan, BrainScanDataModule
 
 # Path to the folder where the pretrained models are saved
 CHECKPOINT_PATH = "../ckpts/autoencoder"
+
+
+class SSIMLoss(SSIM):
+    def forward(self, x, y):
+        return 1.0 - super().forward(x, y)
 
 
 class Encoder(nn.Module):
@@ -175,7 +181,8 @@ class Autoencoder(pl.LightningModule):
     ) -> torch.Tensor:
         x, _ = batch
         x_hat = self(x)
-        loss = 1 - pytorch_ssim.ssim(x, x_hat)
+        # loss = 1 - pytorch_ssim.ssim(x, x_hat)
+        loss = SSIMLoss().forward(x, x_hat)
         return loss.mean()
 
     def configure_optimizers(self):
