@@ -84,9 +84,7 @@ class Decoder(nn.Module):
         if act_fn is None:
             act_fn = nn.GELU()
         c_hid = base_channel_size
-        self.linear = nn.Sequential(
-            nn.Linear(latent_dim, 16 * 22 * 25 * c_hid), act_fn()
-        )
+        self.linear = nn.Sequential(nn.Linear(latent_dim, 16 * 22 * 25 * c_hid), act_fn)
         self.net = nn.Sequential(
             nn.ConvTranspose2d(
                 16 * c_hid,
