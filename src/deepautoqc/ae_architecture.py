@@ -166,6 +166,7 @@ class Autoencoder(pl.LightningModule):
         self.example_input_array = torch.zeros(2, num_input_channels, height, width)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.float()
         z = self.encoder(x)
         return self.decoder(z)
 
