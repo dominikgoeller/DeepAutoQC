@@ -6,6 +6,7 @@ from typing import List
 import pytorch_lightning as pl
 import torch
 import torch.utils.data as data
+import torchio as tio
 import wandb
 from numpy import typing as npt
 from sklearn.model_selection import train_test_split
@@ -87,6 +88,7 @@ class BrainScanDataset(Dataset):
     def __init__(self, brain_scan_list: List[BrainScan]):
         print(len(brain_scan_list))
         self.data: List[BrainScan] = brain_scan_list
+        self.transform = tio.CropOrPad((3, 704, 800))
 
     def __len__(self):
         return len(self.data)
@@ -100,6 +102,13 @@ class BrainScanDataset(Dataset):
         label = label_to_int[label]
         img: npt.NDArray = img.transpose((2, 0, 1))
         img = torch.from_numpy(img)
+
+        img = tio.ScalarImage(
+            tensor=img[None]
+        )  # adds an extra dimension for the CropOrPad function
+        img = self.transform(img)
+        img = img.data[0]  # removes extra dimension again
+
         return img, label
 
 
@@ -171,7 +180,7 @@ class BrainScanDataModule(pl.LightningDataModule):
             self.train_set,
             batch_size=self.batch_size,
             shuffle=True,
-            collate_fn=collate_fn,
+            # collate_fn=collate_fn,
             num_workers=self.num_workers,
             pin_memory=True,
         )
@@ -180,7 +189,7 @@ class BrainScanDataModule(pl.LightningDataModule):
         return DataLoader(
             self.valid_set,
             batch_size=self.batch_size,
-            collate_fn=collate_fn,
+            # collate_fn=collate_fn,
             num_workers=self.num_workers,
             shuffle=False,
             pin_memory=True,

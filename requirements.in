@@ -9,6 +9,7 @@ torch>=2.0.1
 torchmetrics>=1.0.0
 torchvision>=0.15.2
 adan_pytorch>=0.1.0
+pytorch_ssim>=0.1
 
 # Logger
 wandb>=0.15.5
@@ -16,6 +17,7 @@ wandb>=0.15.5
 # Image manipulation
 CairoSVG>=2.7.0
 Pillow>=10.0.0
+torchio>=0.19.1
 
 # Scientific computing
 numpy>=1.24.3
