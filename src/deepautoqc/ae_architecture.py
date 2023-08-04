@@ -18,6 +18,7 @@ from piqa import SSIM
 
 from deepautoqc.data_structures import BrainScan, BrainScanDataModule
 
+# Followed the tutorial of https://lightning.ai/docs/pytorch/stable/notebooks/course_UvA-DL/08-deep-autoencoders.html
 # Path to the folder where the pretrained models are saved
 CHECKPOINT_PATH = "../ckpts/autoencoder"
 
