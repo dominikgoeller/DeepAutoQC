@@ -182,7 +182,7 @@ class Autoencoder(pl.LightningModule):
         x, _ = batch
         x_hat = self(x)
         # loss = 1 - pytorch_ssim.ssim(x, x_hat)
-        loss = SSIMLoss().forward(x, x_hat)
+        loss = SSIMLoss().cuda().forward(x, x_hat)
         return loss.mean()
 
     def configure_optimizers(self):
