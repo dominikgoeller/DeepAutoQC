@@ -181,6 +181,8 @@ class Autoencoder(pl.LightningModule):
     ) -> torch.Tensor:
         x, _ = batch
         x_hat = self(x)
+        x = x.double()
+        x_hat = x_hat.double()  # for input of SSIM
         # loss = 1 - pytorch_ssim.ssim(x, x_hat)
         loss = SSIMLoss().cuda().forward(x, x_hat)
         return loss.mean()
