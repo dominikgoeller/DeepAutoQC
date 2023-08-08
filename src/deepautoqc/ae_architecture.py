@@ -170,7 +170,7 @@ class Autoencoder(pl.LightningModule):
         self.save_hyperparameters()
         self.encoder = encoder_class(num_input_channels, base_channel_size, latent_dim)
         self.decoder = decoder_class(num_input_channels, base_channel_size, latent_dim)
-        self.example_input_array = torch.zeros(2, num_input_channels, height, width)
+        # self.example_input_array = torch.zeros(2, num_input_channels, height, width)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.float()
@@ -182,10 +182,11 @@ class Autoencoder(pl.LightningModule):
     ) -> torch.Tensor:
         x, _ = batch
         x_hat = self(x)
-        x = x.double()
-        x_hat = x_hat.double()  # for input of SSIM
+        # x = x.double()
+        # x_hat = x_hat.double()  # for input of SSIM
         # loss = 1 - pytorch_ssim.ssim(x, x_hat)
-        loss = SSIMLoss().cuda().forward(x, x_hat)
+        # loss = SSIMLoss().cuda().forward(x, x_hat)
+        loss = F.mse_loss(x, x_hat)
         return loss.mean()
 
     def configure_optimizers(self):
@@ -248,7 +249,7 @@ def train_skullstrips(latent_dim):
         accelerator="auto",
         devices="auto",
         deterministic="warn",
-        max_epochs=1,
+        max_epochs=2,
         # callbacks=[
         #    ModelCheckpoint(save_weights_only=True, monitor='val_loss'),
         #    #GenerateCallback(get_train_images(8), every_n_epochs=10),
