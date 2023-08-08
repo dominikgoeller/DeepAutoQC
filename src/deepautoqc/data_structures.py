@@ -109,7 +109,7 @@ class BrainScanDataset(Dataset):
         img = self.transform(img)
         img = img.data[0]  # removes extra dimension again
 
-        return img.float(), label.float()
+        return img.float(), label
 
 
 class BrainScanDataModule(pl.LightningDataModule):
