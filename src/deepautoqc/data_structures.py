@@ -98,7 +98,7 @@ class BrainScanDataset(Dataset):
 
         img: npt.NDArray = item.img
         label = item.label
-        label_to_int = {"usable": 0, "unusable": 1}
+        label_to_int = {"usable": 0.0, "unusable": 1.0}
         label = label_to_int[label]
         img: npt.NDArray = img.transpose((2, 0, 1))
         img = torch.from_numpy(img)
@@ -109,7 +109,7 @@ class BrainScanDataset(Dataset):
         img = self.transform(img)
         img = img.data[0]  # removes extra dimension again
 
-        return img, label
+        return img.float(), label.float()
 
 
 class BrainScanDataModule(pl.LightningDataModule):
