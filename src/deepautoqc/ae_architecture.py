@@ -292,11 +292,12 @@ def train_skullstrips(latent_dim, epochs, data_location):
     dm.setup()
 
     model = Autoencoder(base_channel_size=32, latent_dim=latent_dim)
-
+    run_name = f"AE_{latent_dim}_epochs_{epochs}"
     wandb_logger = WandbLogger(
         project="AE_anomaly_detection",
         log_model=True,
         save_dir="/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/wandb_logs",
+        name=run_name,
     )
 
     checkpoint_callback = ModelCheckpoint(
@@ -369,7 +370,8 @@ def main():
     args = parse_args()
 
     # model_dict = {}
-    for latent_dim in [64, 128, 256, 384]:
+    # dims = [64, 128, 256, 384]
+    for latent_dim in [512]:
         with wandb.init(
             project="AE_anomaly_detection", config={"latent_dim": latent_dim}
         ):
