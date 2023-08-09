@@ -129,9 +129,9 @@ class BrainScanDataModule(pl.LightningDataModule):
         self.seed = seed
 
     def prepare_data(self):
-        pickle_paths = list(self.usable_path.glob("*.pkl")) + list(
-            self.unusable_path.glob("*.pkl")
-        )
+        pickle_paths = list(self.usable_path.glob("*.pkl"))
+        if self.unusable_path:
+            pickle_paths += list(self.unusable_path.glob("*.pkl"))
         data: List[BrainScan] = []
         for p in pickle_paths:
             datapoints: List[BrainScan] = load_from_pickle(p)

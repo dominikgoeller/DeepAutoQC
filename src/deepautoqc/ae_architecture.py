@@ -1,3 +1,4 @@
+import argparse
 import os
 from pathlib import Path
 from typing import Tuple, Type
@@ -9,12 +10,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
+import wandb
 from lightning.pytorch.callbacks import (
     Callback,
     LearningRateMonitor,
     ModelCheckpoint,
 )
 from piqa import SSIM
+from pytorch_lightning.loggers import WandbLogger
 
 from deepautoqc.data_structures import BrainScan, BrainScanDataModule
 
@@ -204,60 +207,125 @@ class Autoencoder(pl.LightningModule):
         self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         loss = self._get_reconstruction_loss(batch)
-        self.log("train_loss", loss, on_step=True, on_epoch=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int):
         loss = self._get_reconstruction_loss(batch)
-        self.log("val_loss", loss, on_step=False, on_epoch=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int):
         loss = self._get_reconstruction_loss(batch)
-        self.log("test_loss", loss, on_step=False, on_epoch=True)
+        self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
 
 class GenerateCallback(Callback):
-    def __init__(self, input_imgs, every_n_epochs=1):
+    def __init__(self, dataloader, every_n_epochs=1):
         super().__init__()
-        self.input_imgs = input_imgs  # Images to reconstruct during training
-        # Only save those images every N epochs (otherwise tensorboard gets quite large)
+        self.dataloader = iter(dataloader)
         self.every_n_epochs = every_n_epochs
 
-    def on_train_epoch_end(self, trainer, pl_module):
+    def get_validation_images(self):
+        try:
+            # Get the next batch from the validation dataloader
+            images, _ = next(self.dataloader)
+            return images
+        except StopIteration:
+            # Reset the iterator if we've reached the end of the data loader
+            self.dataloader = iter(self.dataloader.__iter__())
+            images, _ = next(self.dataloader)
+            return images
+
+    def on_validation_epoch_end(self, trainer, pl_module):
         if trainer.current_epoch % self.every_n_epochs == 0:
-            # Reconstruct images
-            input_imgs = self.input_imgs.to(pl_module.device)
+            input_imgs = self.get_validation_images().to(pl_module.device)
             with torch.no_grad():
                 pl_module.eval()
                 reconst_imgs = pl_module(input_imgs)
                 pl_module.train()
-            # Plot and add to tensorboard
+
+            # You can use torchvision to create a grid or use any other method to format the images.
             imgs = torch.stack([input_imgs, reconst_imgs], dim=1).flatten(0, 1)
             grid = torchvision.utils.make_grid(
-                imgs, nrow=2, normalize=True, range=(-1, 1)
+                imgs, nrow=2, normalize=True, range=(0, 1)
             )
-            trainer.logger.experiment.add_image(
-                "Reconstructions", grid, global_step=trainer.global_step
+
+            # Convert the PyTorch tensor to a NumPy array.
+            # Make sure to transpose the dimensions to match what wandb expects.
+            grid_np = grid.cpu().numpy().transpose((1, 2, 0))
+
+            # Log the image to wandb
+            trainer.logger.experiment.log(
+                {
+                    "Reconstructions": [
+                        wandb.Image(
+                            grid_np, caption="Original and Reconstructed Images"
+                        )
+                    ]
+                }
             )
 
 
-def train_skullstrips(latent_dim):
+def train_skullstrips(latent_dim, epochs, data_location):
     pl.seed_everything(111)
+
+    NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
+
+    if data_location == "local":
+        usable_path = Path("/Volumes/PortableSSD/procesed_usable")
+        unusable_path = Path("/Volumes/PortableSSD/processed_unusable")
+    elif data_location == "cluster":
+        usable_path = Path(
+            "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_usable"
+        )
+        unusable_path = Path(  # noqa: F841
+            "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_unusable"
+        )
+
+    dm = BrainScanDataModule(
+        usable_path=usable_path,
+        unusable_path=None,
+        batch_size=12,
+        num_workers=NUM_WORKERS,
+    )
+    dm.prepare_data()
+    dm.setup()
+
+    model = Autoencoder(base_channel_size=32, latent_dim=latent_dim)
+
+    wandb_logger = WandbLogger(
+        project="AE_anomaly_detection",
+        log_model=True,
+        save_dir="/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/wandb_logs",
+    )
+
+    checkpoint_callback = ModelCheckpoint(
+        dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",
+        save_top_k=1,
+        monitor="val_loss",
+        mode="min",
+        save_weights_only=True,
+        auto_insert_metric_name=False,
+        save_on_train_epoch_end=True,
+        filename=f"AE_{latent_dim}-" + "{epoch}-{step}",
+    )
+
+    generate_callback = GenerateCallback(dm.val_dataloader(), every_n_epochs=10)
 
     trainer = pl.Trainer(
         default_root_dir=os.path.join(CHECKPOINT_PATH, "skullstrip_%i" % latent_dim),
         accelerator="auto",
         devices="auto",
         deterministic="warn",
-        max_epochs=2,
-        # callbacks=[
-        #    ModelCheckpoint(save_weights_only=True, monitor='val_loss'),
-        #    #GenerateCallback(get_train_images(8), every_n_epochs=10),
-        #    LearningRateMonitor(logging_interval="epoch"),
-        # ],
+        enable_progress_bar=True,
+        max_epochs=epochs,
+        callbacks=[
+            checkpoint_callback,
+            generate_callback,
+            #    LearningRateMonitor(logging_interval="epoch"),
+        ],
+        logger=wandb_logger,
     )
-    # trainer.logger._log_graph = True  # If True, we plot the computation graph in tensorboard
-    # trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
 
     # Check whether pretrained model exists. If yes, load it and skip training
     # pretrained_filename = os.path.join(CHECKPOINT_PATH, "skullstrip_%i.ckpt" % latent_dim)
@@ -265,23 +333,7 @@ def train_skullstrips(latent_dim):
     #    print("Found pretrained model, loading...")
     #    model = Autoencoder.load_from_checkpoint(pretrained_filename)
     # else:
-    model = Autoencoder(base_channel_size=32, latent_dim=latent_dim)
 
-    # usable_path = Path("/Volumes/PortableSSD/data/skullstrip_rpt_processed_usable")
-    usable_path = Path(
-        "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_usable"
-    )
-
-    NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
-
-    dm = BrainScanDataModule(
-        usable_path=usable_path,
-        unusable_path=usable_path,
-        batch_size=12,
-        num_workers=NUM_WORKERS,
-    )
-    dm.prepare_data()
-    dm.setup()
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
     # Test best model on validation and test set
     val_result = trainer.test(model, dataloaders=dm.val_dataloader(), verbose=False)
@@ -290,12 +342,43 @@ def train_skullstrips(latent_dim):
     return model, result
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Training Script")
+    parser.add_argument(
+        "-dl",
+        "--data_location",
+        type=str,
+        choices=["local", "cluster"],
+        required=True,
+        help="Choose between 'local' and 'cluster' to determine the data paths.",
+    )
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        type=int,
+        default=20,
+        help="number of epochs to train our network for",
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+
 def main():
-    model_dict = {}
+    args = parse_args()
+
+    # model_dict = {}
     for latent_dim in [64, 128, 256, 384]:
-        model_ld, result_ld = train_skullstrips(latent_dim)
-        model_dict[latent_dim] = {"model": model_ld, "result": result_ld}
-    # train_skullstrips()
+        with wandb.init(
+            project="AE_anomaly_detection", config={"latent_dim": latent_dim}
+        ):
+            model_ld, result_ld = train_skullstrips(
+                latent_dim, args.epochs, args.data_location
+            )
+            wandb.log({"Results": result_ld})
+            # wandb.save("model.h5")  # Make sure to save the model in your desired format
+            # model_dict[latent_dim] = {"model": model_ld, "result": result_ld}
 
 
 if __name__ == "__main__":
