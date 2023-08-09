@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from typing import Tuple, Type
 
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import pytorch_ssim
 import torch
 import torch.nn as nn
