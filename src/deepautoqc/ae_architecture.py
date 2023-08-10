@@ -74,7 +74,7 @@ class Encoder(nn.Module):
             act_fn,
             nn.Conv2d(16 * c_hid, 16 * c_hid, kernel_size=3, padding=1),
             act_fn,
-            nn.Flatten(),  # Image grid to single feature vector
+            nn.Flatten(),  # Image grid to single feature vector maybe change to Global Avg Pooling layer to summarize feature maps about learned objects
             nn.Linear(16 * 22 * 25 * c_hid, latent_dim),
         )
 
@@ -246,9 +246,7 @@ class GenerateCallback(Callback):
 
             # You can use torchvision to create a grid or use any other method to format the images.
             imgs = torch.stack([input_imgs, reconst_imgs], dim=1).flatten(0, 1)
-            grid = torchvision.utils.make_grid(
-                imgs, nrow=2, normalize=True, range=(0, 1)
-            )
+            grid = torchvision.utils.make_grid(imgs, nrow=2)
 
             # Convert the PyTorch tensor to a NumPy array.
             # Make sure to transpose the dimensions to match what wandb expects.

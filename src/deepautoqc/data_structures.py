@@ -199,7 +199,7 @@ class BrainScanDataModule(pl.LightningDataModule):
         return DataLoader(
             self.test_set,
             batch_size=self.batch_size,
-            collate_fn=collate_fn,
+            # collate_fn=collate_fn,
             num_workers=self.num_workers,
             pin_memory=True,
         )
