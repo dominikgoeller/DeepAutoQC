@@ -9,11 +9,120 @@ import torch.utils.data as data
 import torchio as tio
 import wandb
 from numpy import typing as npt
+from pythae.data.datasets import DatasetOutput
+from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 from sklearn.model_selection import train_test_split
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader, Dataset
 
 BrainScan = namedtuple("BrainScan", "id, img, label")
+
+
+class VAE_BrainScanDataModule(pl.LightningDataModule):
+    def __init__(
+        self,
+        data_path: Path,
+        batch_size: int,
+        num_workers: int,
+        seed: int = 111,
+    ):
+        super().__init__()
+        self.data_path = data_path
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.seed = seed
+
+    def prepare_data(self):
+        # Load the data from the given path
+        pickle_paths = list(self.data_path.glob("*.pkl"))
+        data: List[BrainScan] = []
+        for p in pickle_paths:
+            datapoints: List[BrainScan] = load_from_pickle(p)
+            data.extend(datapoints)
+        print(f"Loaded data size: {len(data)}")
+
+        # Split data into train and test
+        ids = [scan.id for scan in data]
+        imgs = [scan.img for scan in data]
+        labels = [scan.label for scan in data]
+
+        (
+            train_ids,
+            test_ids,
+            train_imgs,
+            test_imgs,
+            train_labels,
+            test_labels,
+        ) = train_test_split(ids, imgs, labels, test_size=0.2, random_state=111)
+
+        # Store train and test data
+        self.train_data = [
+            BrainScan(id, img, label)
+            for id, img, label in zip(train_ids, train_imgs, train_labels)
+        ]
+        self.test_data = [
+            BrainScan(id, img, label)
+            for id, img, label in zip(test_ids, test_imgs, test_labels)
+        ]
+
+    def setup(self, stage=None):
+        train_set = BrainScanDataset(brain_scan_list=self.train_data)
+        test_set = BrainScanDataset(brain_scan_list=self.test_data)
+
+        train_set_size = int(len(train_set) * 0.8)
+        valid_set_size = len(train_set) - train_set_size
+
+        generator = torch.Generator().manual_seed(self.seed)
+        self.train_set, self.valid_set = data.random_split(
+            train_set, [train_set_size, valid_set_size], generator=generator
+        )
+        self.test_set = test_set
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_set,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+            pin_memory=True,
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            self.valid_set,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=False,
+            pin_memory=True,
+        )
+
+
+class VAE_BrainScanDataset(Dataset):
+    def __init__(self, brain_scan_list: List[BrainScan]):
+        print(len(brain_scan_list))
+        self.data: List[BrainScan] = brain_scan_list
+        self.transform = tio.CropOrPad((3, 704, 800))
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        item: BrainScan = self.data[index]
+
+        img: npt.NDArray = item.img
+        label = item.label
+        label_to_int = {"usable": 0.0, "unusable": 1.0}
+        label = label_to_int[label]
+        img: npt.NDArray = img.transpose((2, 0, 1))
+        img = torch.from_numpy(img)
+
+        img = tio.ScalarImage(
+            tensor=img[None]
+        )  # adds an extra dimension for the CropOrPad function
+        img = self.transform(img)
+        img = img.data[0]  # removes extra dimension again
+
+        return DatasetOutput(data=img.float(), labels=label)
 
 
 class LogPredictionsCallback(pl.Callback):
