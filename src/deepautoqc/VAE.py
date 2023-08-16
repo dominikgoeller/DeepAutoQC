@@ -19,8 +19,8 @@ def build_model(epochs):
     config = BaseTrainerConfig(
         output_dir="./ckpts",
         learning_rate=1e-3,
-        per_device_train_batch_size=64,
-        per_device_eval_batch_size=64,
+        per_device_train_batch_size=12,
+        per_device_eval_batch_size=12,
         num_epochs=epochs,
         seed=111,
     )
