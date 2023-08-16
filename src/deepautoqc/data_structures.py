@@ -43,7 +43,7 @@ class VAE_BrainScanDataset(Dataset):
         img = self.transform(img)
         img = img.data[0]  # removes extra dimension again
 
-        return DatasetOutput(data=img.float(), labels=label)
+        return DatasetOutput(data=img.float())
 
 
 class LogPredictionsCallback(pl.Callback):
