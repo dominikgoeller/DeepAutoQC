@@ -3,9 +3,11 @@ from pathlib import Path
 from typing import List
 
 import lightning.pytorch as pl
+import torch
 from pythae.models import VAE, VAEConfig
 from pythae.pipelines.training import TrainingPipeline
 from pythae.trainers import BaseTrainerConfig
+from torch import nn
 from torch.utils.data import random_split
 
 from deepautoqc.data_structures import (
@@ -19,8 +21,8 @@ def build_model(epochs):
     config = BaseTrainerConfig(
         output_dir="./ckpts",
         learning_rate=1e-3,
-        per_device_train_batch_size=12,
-        per_device_eval_batch_size=12,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
         num_epochs=epochs,
         seed=111,
     )
@@ -96,6 +98,10 @@ def main():
     train_set, eval_set = initialize_datasets(data_path=data_path)
 
     model, config = build_model(epochs=EPOCHS)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        model = nn.DataParallel(module=model)
+    model.to(device)
     pipeline = train_pipeline(model=model, config=config)
     pipeline(train_data=train_set, eval_data=eval_set)
 
