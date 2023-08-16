@@ -99,8 +99,8 @@ def main():
 
     model, config = build_model(epochs=EPOCHS)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if torch.cuda.is_available():
-        model = nn.DataParallel(module=model)
+    # if torch.cuda.is_available():
+    #   model = nn.DataParallel(module=model)
     model.to(device)
     pipeline = train_pipeline(model=model, config=config)
     pipeline(train_data=train_set, eval_data=eval_set)
