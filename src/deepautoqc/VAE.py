@@ -8,7 +8,7 @@ import lightning.pytorch as pl
 import torch
 from pythae.models import VAE, VAEConfig
 from pythae.pipelines.training import TrainingPipeline
-from pythae.trainers import BaseTrainerConfig
+from pythae.trainers import BaseTrainer, BaseTrainerConfig
 from torch import nn
 from torch.utils.data import random_split
 
@@ -37,7 +37,7 @@ def build_model(epochs):
         master_port=str(12345 + int(min(gpu_ids))),
     )
 
-    model_config = VAEConfig(input_dim=(3, 704, 800), latent_dim=384)
+    model_config = VAEConfig(input_dim=(3, 704, 800), latent_dim=128)
 
     model = VAE(model_config=model_config)
 
@@ -107,13 +107,26 @@ def main():
 
     train_set, eval_set = initialize_datasets(data_path=data_path)
 
-    model, config = build_model(epochs=EPOCHS)
+    model, training_config = build_model(epochs=EPOCHS)
+    torch.cuda.set_device(training_config.local_rank)
+    model = model.to(f"cuda:{training_config.local_rank}")
+    # model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[config.local_rank], output_device=config.local_rank)
+
+    trainer = BaseTrainer(
+        model=model,
+        train_dataset=train_set,
+        eval_dataset=eval_set,
+        training_config=training_config,
+    )
+
+    trainer.train()
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # if torch.cuda.is_available():
     #   model = nn.DataParallel(module=model)
     # model.to(device)
-    pipeline = train_pipeline(model=model, config=config)
-    pipeline(train_data=train_set, eval_data=eval_set)
+    torch.cuda.empty_cache()
+    # pipeline = train_pipeline(model=model, config=config)
+    # pipeline(train_data=train_set, eval_data=eval_set)
 
 
 if __name__ == "__main__":
