@@ -37,8 +37,8 @@ def build_model(epochs):
         master_addr=hostlist.expand_hostlist(os.environ["SLURM_JOB_NODELIST"])[0],
         master_port=str(12345 + int(min(gpu_ids))),
     )
-    encoder = Encoder((3, 704, 800), base_channel_size=32, latent_dim=128)
-    decoder = Decoder((3, 704, 800), base_channel_size=32, latent_dim=128)
+    encoder = Encoder(3, base_channel_size=32, latent_dim=128)
+    decoder = Decoder(3, base_channel_size=32, latent_dim=128)
     model_config = VAEConfig(input_dim=(3, 704, 800), latent_dim=128)
 
     model = VAE(model_config=model_config, encoder=encoder, decoder=decoder)
