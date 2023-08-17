@@ -1,7 +1,9 @@
 import argparse
+import os
 from pathlib import Path
 from typing import List
 
+import hostlist
 import lightning.pytorch as pl
 import torch
 from pythae.models import VAE, VAEConfig
@@ -18,6 +20,7 @@ from deepautoqc.data_structures import (
 
 
 def build_model(epochs):
+    gpu_ids = os.environ["SLURM_STEP_GPUS"].split(",")
     config = BaseTrainerConfig(
         output_dir="./ckpts",
         learning_rate=1e-3,
@@ -25,6 +28,13 @@ def build_model(epochs):
         per_device_eval_batch_size=8,
         num_epochs=epochs,
         seed=111,
+        no_cuda=False,
+        world_size=int(os.environ["SLURM_NTASKS"]),
+        dist_backend="nccl",
+        rank=int(os.environ["SLURM_PROCID"]),
+        local_rank=int(os.environ["SLURM_LOCALID"]),
+        master_addr=hostlist.expand_hostlist(os.environ["SLURM_JOB_NODELIST"])[0],
+        master_port=str(12345 + int(min(gpu_ids))),
     )
 
     model_config = VAEConfig(input_dim=(3, 704, 800), latent_dim=384)
@@ -98,10 +108,10 @@ def main():
     train_set, eval_set = initialize_datasets(data_path=data_path)
 
     model, config = build_model(epochs=EPOCHS)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # if torch.cuda.is_available():
     #   model = nn.DataParallel(module=model)
-    model.to(device)
+    # model.to(device)
     pipeline = train_pipeline(model=model, config=config)
     pipeline(train_data=train_set, eval_data=eval_set)
 
