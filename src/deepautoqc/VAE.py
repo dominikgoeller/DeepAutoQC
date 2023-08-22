@@ -171,7 +171,7 @@ def build_model(epochs):
     # gpu_ids = os.environ["SLURM_STEP_GPUS"].split(",")
     config = BaseTrainerConfig(
         output_dir="./ckpts",
-        learning_rate=1e-3,
+        learning_rate=1e-4,
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
         num_epochs=epochs,
