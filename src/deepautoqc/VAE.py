@@ -24,10 +24,11 @@ from deepautoqc.data_structures import (
 
 
 def check_for_nan_and_inf(dataset):
-    for data in dataset:
-        inputs, _ = data
-        if torch.isnan(inputs).any() or torch.isinf(inputs).any():
-            raise ValueError("NaN or Inf found in the dataset")
+    for i in range(len(dataset)):
+        item = dataset[i]
+        img = item.data
+        if torch.isnan(img).any() or torch.isinf(img).any():
+            raise ValueError(f"NaN or Inf found in the dataset at index {i}")
 
 
 class VAE_Encoder(BaseEncoder):
