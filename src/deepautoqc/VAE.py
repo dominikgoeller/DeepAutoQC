@@ -23,6 +23,13 @@ from deepautoqc.data_structures import (
 )
 
 
+def check_for_nan_and_inf(dataset):
+    for data in dataset:
+        inputs, _ = data
+        if torch.isnan(inputs).any() or torch.isinf(inputs).any():
+            raise ValueError("NaN or Inf found in the dataset")
+
+
 class VAE_Encoder(BaseEncoder):
     def __init__(
         self,
@@ -247,6 +254,9 @@ def main():
     EPOCHS = args.epochs
 
     train_set, eval_set = initialize_datasets(data_path=data_path)
+
+    check_for_nan_and_inf(train_set)
+    check_for_nan_and_inf(eval_set)
 
     model, training_config = build_model(epochs=EPOCHS)
     # torch.cuda.set_device(training_config.local_rank)
