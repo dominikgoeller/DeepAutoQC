@@ -6,6 +6,7 @@ from typing import List
 import hostlist
 import lightning.pytorch as pl
 import torch
+import torch.nn.functional as F
 from pythae.models import VAE, VAEConfig
 from pythae.models.base.base_utils import ModelOutput
 from pythae.models.nn import BaseDecoder, BaseEncoder
@@ -76,7 +77,7 @@ class VAE_Encoder(BaseEncoder):
         x = self.net(x)
         print(x.shape)
         mu = self.mu_layer(x)
-        log_var = self.log_var_layer(x)
+        log_var = F.softplus(self.log_var_layer(x))
         output = ModelOutput(embedding=mu, log_covariance=log_var)
         return output
 
