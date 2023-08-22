@@ -7,6 +7,8 @@ import hostlist
 import lightning.pytorch as pl
 import torch
 from pythae.models import VAE, VAEConfig
+from pythae.models.base.base_utils import ModelOutput
+from pythae.models.nn import BaseDecoder, BaseEncoder
 from pythae.pipelines.training import TrainingPipeline
 from pythae.trainers import BaseTrainer, BaseTrainerConfig
 from torch import nn
@@ -20,8 +22,144 @@ from deepautoqc.data_structures import (
 )
 
 
+class VAE_Encoder(BaseEncoder):
+    def __init__(
+        self,
+        num_input_channels: int,
+        base_channel_size: int,
+        latent_dim: int,
+        act_fn=None,
+    ):
+        super().__init__()
+        if act_fn is None:
+            act_fn = nn.GELU()
+        c_hid = base_channel_size
+        self.net = nn.Sequential(
+            nn.Conv2d(
+                num_input_channels, c_hid, kernel_size=3, padding=1, stride=2
+            ),  # 704x800 => 352x400
+            act_fn,
+            nn.Conv2d(c_hid, c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.Conv2d(
+                c_hid, 2 * c_hid, kernel_size=3, padding=1, stride=2
+            ),  # 352x400 => 176x200
+            act_fn,
+            nn.Conv2d(2 * c_hid, 2 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.Conv2d(
+                2 * c_hid, 4 * c_hid, kernel_size=3, padding=1, stride=2
+            ),  # 176x200 => 88x100
+            act_fn,
+            nn.Conv2d(4 * c_hid, 4 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.Conv2d(
+                4 * c_hid, 8 * c_hid, kernel_size=3, padding=1, stride=2
+            ),  # 88x100 => 44x50
+            act_fn,
+            nn.Conv2d(8 * c_hid, 8 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.Conv2d(
+                8 * c_hid, 16 * c_hid, kernel_size=3, padding=1, stride=2
+            ),  # 44x50 => 22x25
+            act_fn,
+            nn.Conv2d(16 * c_hid, 16 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.Flatten(),  # Image grid to single feature vector maybe change to Global Avg Pooling layer to summarize feature maps about learned objects
+            nn.Linear(16 * 22 * 25 * c_hid, latent_dim),
+        )
+        # Output of convolutional layers torch.Size([8, 128]) batchsize x latentdim
+        self.mu_layer = nn.Linear(128, latent_dim)
+        self.log_var_layer = nn.Linear(128, latent_dim)
+
+    def forward(self, x):
+        x = self.net(x)
+        print(x.shape)
+        mu = self.mu_layer(x)
+        log_var = self.log_var_layer(x)
+        output = ModelOutput(embedding=mu, log_covariance=log_var)
+        return output
+
+
+class VAE_Decoder(BaseDecoder):
+    def __init__(
+        self,
+        num_input_channels: int,
+        base_channel_size: int,
+        latent_dim: int,
+        act_fn=None,
+    ):
+        super().__init__()
+        if act_fn is None:
+            act_fn = nn.GELU()
+        c_hid = base_channel_size
+        self.linear = nn.Sequential(nn.Linear(latent_dim, 16 * 22 * 25 * c_hid), act_fn)
+        self.net = nn.Sequential(
+            nn.ConvTranspose2d(
+                16 * c_hid,
+                16 * c_hid,
+                kernel_size=3,
+                output_padding=1,
+                padding=1,
+                stride=2,
+            ),  # 22x25 => 44x50
+            act_fn,
+            nn.Conv2d(16 * c_hid, 16 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.ConvTranspose2d(
+                16 * c_hid,
+                8 * c_hid,
+                kernel_size=3,
+                output_padding=1,
+                padding=1,
+                stride=2,
+            ),  # 44x50 => 88x100
+            act_fn,
+            nn.Conv2d(8 * c_hid, 8 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.ConvTranspose2d(
+                8 * c_hid,
+                4 * c_hid,
+                kernel_size=3,
+                output_padding=1,
+                padding=1,
+                stride=2,
+            ),  # 88x100 => 176x200
+            act_fn,
+            nn.Conv2d(4 * c_hid, 4 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.ConvTranspose2d(
+                4 * c_hid,
+                2 * c_hid,
+                kernel_size=3,
+                output_padding=1,
+                padding=1,
+                stride=2,
+            ),  # 176x200 => 352x400
+            act_fn,
+            nn.Conv2d(2 * c_hid, 2 * c_hid, kernel_size=3, padding=1),
+            act_fn,
+            nn.ConvTranspose2d(
+                2 * c_hid,
+                num_input_channels,
+                kernel_size=3,
+                output_padding=1,
+                padding=1,
+                stride=2,
+            ),  # 352x400 => 704x800
+            nn.Sigmoid(),
+        )
+
+    def forward(self, z):
+        x = self.linear(z)
+        x = x.reshape(x.shape[0], -1, 22, 25)
+        reconstruction = self.net(x)
+        output = ModelOutput(reconstruction=reconstruction)
+        return output
+
+
 def build_model(epochs):
-    gpu_ids = os.environ["SLURM_STEP_GPUS"].split(",")
+    # gpu_ids = os.environ["SLURM_STEP_GPUS"].split(",")
     config = BaseTrainerConfig(
         output_dir="./ckpts",
         learning_rate=1e-3,
@@ -30,15 +168,15 @@ def build_model(epochs):
         num_epochs=epochs,
         seed=111,
         no_cuda=False,
-        world_size=int(os.environ["SLURM_NTASKS"]),
-        dist_backend="nccl",
-        rank=int(os.environ["SLURM_PROCID"]),
-        local_rank=int(os.environ["SLURM_LOCALID"]),
-        master_addr=hostlist.expand_hostlist(os.environ["SLURM_JOB_NODELIST"])[0],
-        master_port=str(12345 + int(min(gpu_ids))),
+        # world_size=int(os.environ["SLURM_NTASKS"]),
+        # dist_backend="nccl",
+        # rank=int(os.environ["SLURM_PROCID"]),
+        # local_rank=int(os.environ["SLURM_LOCALID"]),
+        # master_addr=hostlist.expand_hostlist(os.environ["SLURM_JOB_NODELIST"])[0],
+        # master_port=str(12345 + int(min(gpu_ids))),
     )
-    encoder = Encoder(3, base_channel_size=32, latent_dim=128)
-    decoder = Decoder(3, base_channel_size=32, latent_dim=128)
+    encoder = VAE_Encoder(3, base_channel_size=32, latent_dim=128)
+    decoder = VAE_Decoder(3, base_channel_size=32, latent_dim=128)
     model_config = VAEConfig(input_dim=(3, 704, 800), latent_dim=128)
 
     model = VAE(model_config=model_config, encoder=encoder, decoder=decoder)
@@ -110,8 +248,8 @@ def main():
     train_set, eval_set = initialize_datasets(data_path=data_path)
 
     model, training_config = build_model(epochs=EPOCHS)
-    torch.cuda.set_device(training_config.local_rank)
-    model = model.to(f"cuda:{training_config.local_rank}")
+    # torch.cuda.set_device(training_config.local_rank)
+    # model = model.to(f"cuda:{training_config.local_rank}")
     # model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[config.local_rank], output_device=config.local_rank)
 
     trainer = BaseTrainer(
