@@ -7,7 +7,6 @@ import pytorch_lightning as pl
 import torch
 import torch.utils.data as data
 import torchio as tio
-import wandb
 from numpy import typing as npt
 from pythae.data.datasets import DatasetOutput
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
@@ -15,7 +14,30 @@ from sklearn.model_selection import train_test_split
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader, Dataset
 
+import wandb
+
 BrainScan = namedtuple("BrainScan", "id, img, label")
+
+
+class BrainScanDataset_ResNet(Dataset):
+    def __init__(self, brain_scan_list: List[BrainScan]):
+        print(len(brain_scan_list))
+        self.data: List[BrainScan] = brain_scan_list
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        item: BrainScan = self.data[index]
+
+        img: npt.NDArray = item.img
+        label = item.label
+        label_to_int = {"usable": 0.0, "unusable": 1.0}
+        label = label_to_int[label]
+        img: npt.NDArray = img.transpose((2, 0, 1))
+        img = torch.from_numpy(img)
+
+        return img.float(), label
 
 
 class VAE_BrainScanDataset(Dataset):
@@ -44,43 +66,6 @@ class VAE_BrainScanDataset(Dataset):
         img = img.data[0]  # removes extra dimension again
 
         return DatasetOutput(data=img.float())
-
-
-class LogPredictionsCallback(pl.Callback):
-    def on_validation_batch_end(
-        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
-    ):
-        """Called when the validation batch ends."""
-
-        # Let's log 20 sample image predictions from first batch
-        if batch_idx == 0:
-            n = 20
-            x, y = batch
-            images = [wandb.Image(img.permute(1, 2, 0)) for img in x[:n]]
-            logits = pl_module(x)
-            preds = torch.argmax(logits, dim=1)
-            captions = [
-                f"Ground Truth: {y_i} - Prediction: {y_pred}"
-                for y_i, y_pred in zip(y[:n], preds[:n])
-            ]
-
-            # Log images with `WandbLogger.log_image`
-            trainer.logger.experiment.log(
-                {
-                    "sample_images": [
-                        wandb.Image(img, caption=c) for img, c in zip(images, captions)
-                    ]
-                }
-            )
-
-            # Log predictions as a Table
-            columns = ["image", "ground truth", "prediction"]
-            data = [
-                [wandb.Image(x_i.permute(1, 2, 0)), y_i.item(), y_pred.item()]
-                for x_i, y_i, y_pred in zip(x[:n], y[:n], preds[:n])
-            ]
-            table = wandb.Table(data=data, columns=columns)
-            trainer.logger.experiment.log({"sample_table": table})
 
 
 def collate_fn(batch):

@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
-import wandb
 from lightning.pytorch.callbacks import (
     Callback,
     LearningRateMonitor,
@@ -19,6 +18,7 @@ from lightning.pytorch.callbacks import (
 from piqa import SSIM
 from pytorch_lightning.loggers import WandbLogger
 
+import wandb
 from deepautoqc.data_structures import BrainScan, BrainScanDataModule
 
 # Followed the tutorial of https://lightning.ai/docs/pytorch/stable/notebooks/course_UvA-DL/08-deep-autoencoders.html
@@ -274,7 +274,8 @@ def train_skullstrips(latent_dim, epochs, data_location):
         unusable_path = Path("/Volumes/PortableSSD/processed_unusable")
     elif data_location == "cluster":
         usable_path = Path(
-            "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_usable"
+            # "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_usable"
+            "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original"
         )
         unusable_path = Path(  # noqa: F841
             "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_unusable"
@@ -283,12 +284,12 @@ def train_skullstrips(latent_dim, epochs, data_location):
     dm = BrainScanDataModule(
         usable_path=usable_path,
         unusable_path=None,
-        batch_size=12,
+        batch_size=16,
         num_workers=NUM_WORKERS,
     )
     dm.prepare_data()
     dm.setup()
-
+    wandb.init(dir="/data/gpfs-1/users/goellerd_c/work/wandb_init")
     model = Autoencoder(base_channel_size=32, latent_dim=latent_dim)
     run_name = f"AE_{latent_dim}_epochs_{epochs}"
     wandb_logger = WandbLogger(
@@ -369,7 +370,7 @@ def main():
 
     # model_dict = {}
     # dims = [64, 128, 256, 384]
-    for latent_dim in [512]:
+    for latent_dim in [128]:
         with wandb.init(
             project="AE_anomaly_detection", config={"latent_dim": latent_dim}
         ):
