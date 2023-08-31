@@ -1,5 +1,6 @@
 import base64
 import io
+import multiprocessing
 import os
 import re
 import webbrowser
@@ -205,19 +206,48 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
     save_to_pickle(data=results, file_path=pickle_path)
 
 
+# def main():
+#    ARGS = parse_args()
+#    print(f"Arguments: {ARGS}")
+#    report_type = "skull_strip"
+#    report_paths = find_reports(ARGS.datapath, report_type=report_type)
+#    print(len(report_paths))
+#    for path in report_paths:
+#        if "label-good" in os.path.basename(path):
+#            try:
+#                process_image(image_path=path, save_path=ARGS.savepath, ARGS=ARGS)
+#            except Exception as e:
+#                print(f"Error processing {path}: {e}")
+#                continue
+
+
+def worker(image_path, save_path, ARGS):
+    try:
+        process_image(image_path=image_path, save_path=save_path, ARGS=ARGS)
+    except Exception as e:
+        print(f"Error processing {image_path}: {e}")
+        return
+
+
 def main():
     ARGS = parse_args()
     print(f"Arguments: {ARGS}")
+
     report_type = "skull_strip"
     report_paths = find_reports(ARGS.datapath, report_type=report_type)
-    print(len(report_paths))
+
+    print(f"Found {len(report_paths)} reports to process.")
+
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+
     for path in report_paths:
         if "label-good" in os.path.basename(path):
-            try:
-                process_image(image_path=path, save_path=ARGS.savepath, ARGS=ARGS)
-            except Exception as e:
-                print(f"Error processing {path}: {e}")
-                continue
+            pool.apply_async(worker, args=(path, ARGS.savepath, ARGS))
+
+    pool.close()
+    pool.join()
+
+    print("All tasks completed.")
 
 
 if __name__ == "__main__":
