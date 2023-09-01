@@ -5,16 +5,15 @@ from typing import List
 
 import pytorch_lightning as pl
 import torch
-import torch.utils.data as data
+
+# import torch.utils.data as data
 import torchio as tio
 from numpy import typing as npt
 from pythae.data.datasets import DatasetOutput
 from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 from sklearn.model_selection import train_test_split
 from torch.nn.functional import pad
-from torch.utils.data import DataLoader, Dataset
-
-import wandb
+from torch.utils.data import DataLoader, Dataset, random_split
 
 BrainScan = namedtuple("BrainScan", "id, img, label")
 
@@ -185,7 +184,7 @@ class BrainScanDataModule(pl.LightningDataModule):
         valid_set_size = len(train_set) - train_set_size
 
         generator = torch.Generator().manual_seed(self.seed)
-        self.train_set, self.valid_set = data.random_split(
+        self.train_set, self.valid_set = random_split(
             train_set, [train_set_size, valid_set_size], generator=generator
         )
         self.test_set = test_set
@@ -215,6 +214,99 @@ class BrainScanDataModule(pl.LightningDataModule):
             self.test_set,
             batch_size=self.batch_size,
             # collate_fn=collate_fn,
+            num_workers=self.num_workers,
+            pin_memory=True,
+        )
+
+
+class BrainScanDataModule_lazy(pl.LightningDataModule):
+    def __init__(
+        self,
+        usable_path: Path,
+        unusable_path: Path,
+        batch_size: int,
+        num_workers: int,
+        seed: int = 111,
+    ):
+        super().__init__()
+        self.usable_path = usable_path
+        self.unusable_path = unusable_path
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.seed = seed
+
+    def prepare_data(self):
+        # Store paths to Pickle files, limit to first 10k
+        self.pickle_paths = list(self.usable_path.glob("*.pkl"))
+        if self.unusable_path:
+            self.pickle_paths += list(self.unusable_path.glob("*.pkl"))
+
+    def setup(self, stage=None):
+        # Load the data lazily
+        data: List[BrainScan] = []
+        for p in self.pickle_paths:
+            datapoints: List[BrainScan] = load_from_pickle(p)
+            data.extend(datapoints)
+
+        # Perform train/test split
+        ids = [scan.id for scan in data]
+        imgs = [scan.img for scan in data]
+        labels = [scan.label for scan in data]
+        (
+            train_ids,
+            test_ids,
+            train_imgs,
+            test_imgs,
+            train_labels,
+            test_labels,
+        ) = train_test_split(
+            ids, imgs, labels, test_size=0.2, random_state=self.seed, stratify=labels
+        )
+
+        self.train_data = [
+            BrainScan(id, img, label)
+            for id, img, label in zip(train_ids, train_imgs, train_labels)
+        ]
+        self.test_data = [
+            BrainScan(id, img, label)
+            for id, img, label in zip(test_ids, test_imgs, test_labels)
+        ]
+
+        # Initialize datasets
+        train_set = BrainScanDataset(brain_scan_list=self.train_data)
+        test_set = BrainScanDataset(brain_scan_list=self.test_data)
+
+        train_set_size = int(len(train_set) * 0.8)
+        valid_set_size = len(train_set) - train_set_size
+
+        generator = torch.Generator().manual_seed(self.seed)
+        self.train_set, self.valid_set = random_split(
+            train_set, [train_set_size, valid_set_size], generator=generator
+        )
+        self.test_set = test_set
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_set,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+            pin_memory=True,
+        )
+
+    def val_dataloader(self):
+        return DataLoader(
+            self.valid_set,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            shuffle=False,
+            pin_memory=True,
+        )
+
+    def test_dataloader(self):
+        return DataLoader(
+            self.test_set,
+            batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=True,
         )
