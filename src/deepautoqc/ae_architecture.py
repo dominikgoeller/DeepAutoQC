@@ -19,7 +19,11 @@ from piqa import SSIM
 from pytorch_lightning.loggers import WandbLogger
 
 import wandb
-from deepautoqc.data_structures import BrainScan, BrainScanDataModule
+from deepautoqc.data_structures import (
+    BrainScan,
+    BrainScanDataModule,
+    BrainScanDataModule_lazy,
+)
 
 # Followed the tutorial of https://lightning.ai/docs/pytorch/stable/notebooks/course_UvA-DL/08-deep-autoencoders.html
 # Path to the folder where the pretrained models are saved
@@ -281,10 +285,10 @@ def train_skullstrips(latent_dim, epochs, data_location):
             "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_unusable"
         )
 
-    dm = BrainScanDataModule(
+    dm = BrainScanDataModule_lazy(
         usable_path=usable_path,
         unusable_path=None,
-        batch_size=16,
+        batch_size=8,
         num_workers=NUM_WORKERS,
     )
     dm.prepare_data()
