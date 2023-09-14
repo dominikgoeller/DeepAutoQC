@@ -67,37 +67,6 @@ class VAE_BrainScanDataset(Dataset):
         return DatasetOutput(data=img.float())
 
 
-def collate_fn(batch):
-    # Find the maximum height and width in this batch
-    max_h = max([img.shape[1] for img, _ in batch])
-    max_w = max([img.shape[2] for img, _ in batch])
-
-    padded_imgs = []
-    labels = []
-
-    for img, label in batch:
-        # img = torch.from_numpy(img)
-        pad_h = max_h - img.shape[1]
-        pad_w = max_w - img.shape[2]
-
-        pad_h_up = pad_h // 2
-        pad_h_down = pad_h - pad_h_up
-        pad_w_left = pad_w // 2
-        pad_w_right = pad_w - pad_w_left
-
-        # Pad the image symmetrically
-        padded_img = pad(img, pad=(pad_w_left, pad_w_right, pad_h_up, pad_h_down))
-
-        padded_imgs.append(padded_img)
-        labels.append(label)
-
-    # Stack images and labels
-    padded_imgs = torch.stack(padded_imgs)
-    labels = torch.tensor(labels)
-
-    return padded_imgs, labels
-
-
 class BrainScanDataset(Dataset):
     def __init__(self, brain_scan_list: List[BrainScan]):
         print(len(brain_scan_list))

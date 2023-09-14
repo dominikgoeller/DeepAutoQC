@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import lightning.pytorch as pl
 import torch
 import torch.nn.functional as F
@@ -201,7 +203,6 @@ class VAE_Lightning(pl.LightningModule):
         # Total loss
         loss = recon_loss + kl_divergence
 
-        # Logging
         self.log(
             "train_recon_loss", recon_loss, on_step=False, on_epoch=True, prog_bar=True
         )
@@ -215,6 +216,10 @@ class VAE_Lightning(pl.LightningModule):
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
+
+    def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int):
+        loss = self._get_reconstruction_loss(batch)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr)

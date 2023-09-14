@@ -3,53 +3,67 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 from pytorch_lightning.loggers import WandbLogger
 
-from deepautoqc.experiments.data_setup import (  # Assume this is your data pipeline
+import wandb
+from deepautoqc.experiments.data_setup import (
+    BrainScanDataModule,
     TestDataModule,
 )
 from deepautoqc.experiments.ResNet18_AE import Autoencoder
-from deepautoqc.experiments.resnet18_vae import (  # Assume these are your models
-    VAE_Lightning,
-)
+from deepautoqc.experiments.resnet18_vae import VAE_Lightning
+from deepautoqc.experiments.utils import GenerateCallback
 
 
 def objective(trial):
-    # Define hyperparameters using the trial object
-    lr = trial.suggest_float("lr", 1e-6, 1e-1, log=True)
-    z_dim = trial.suggest_categorical("z_dim", [8, 16, 32, 64, 128])
-    architecture_type = trial.suggest_categorical("architecture", ["AE", "VAE"])
-
-    # Instantiate the corresponding model
-    if architecture_type == "AE":
-        model = Autoencoder(lr=lr, latent_dim=z_dim)  # Add other hyperparameters
-    elif architecture_type == "VAE":
-        model = VAE_Lightning(z_dim=z_dim, lr=lr)  # Add other hyperparameters
-
-    # Instantiate DataModule
-    dm = TestDataModule(batch_size=trial.suggest_int("batch_size", 16, 128, step=16))
-
-    dm.setup()
-
-    # Instantiate logger
-    # wandb_logger = WandbLogger(name="My Experiment", project="your_project_name")
-
-    # Instantiate Trainer
-    trainer = pl.Trainer(
-        # logger=wandb_logger,
-        max_epochs=trial.suggest_int("max_epochs", 10, 100),
-        accelerator="auto",
-        # callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_loss")],
+    wandb.init(
+        project="Deep-Auto-QC-Neuro",
+        name=f"Trial-{trial.number}",
+        config={
+            "learning_rate": trial.suggest_float("lr", 1e-6, 1e-1, log=True),
+            "batch_size": trial.suggest_int("batch_size", 16, 128, step=16),
+            "architecture": trial.suggest_categorical("architecture", ["AE", "VAE"]),
+            "z_dim": trial.suggest_categorical("z_dim", [8, 16, 32, 64, 128]),
+            "max_epochs": trial.suggest_int("max_epochs", 10, 100),
+        },
+        notes="Optuna Trial",
+        tags=["optuna", "autoencoder", "VAE", "anomaly_detection"],
     )
 
-    # Train
-    trainer.fit(model, dm.train_dataloader())
+    wandb_logger = WandbLogger()
 
-    # For Optuna
+    lr = wandb.config.learning_rate
+    z_dim = wandb.config.z_dim
+    batch_size = wandb.config.batch_size
+    max_epochs = wandb.config.max_epochs
+    architecture_type = wandb.config.architecture
+
+    if architecture_type == "AE":
+        model = Autoencoder(lr=lr, latent_dim=z_dim)
+    elif architecture_type == "VAE":
+        model = VAE_Lightning(z_dim=z_dim, lr=lr)
+
+    data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
+    dm = BrainScanDataModule(data_dir=data_dir, batch_size=batch_size)
+    dm.setup()
+
+    reconstruct_cb = GenerateCallback(dm.val_dataloader(), every_n_epochs=5)
+
+    pruning_cb = PyTorchLightningPruningCallback(trial=trial, monitor="val_loss")
+
+    trainer = pl.Trainer(
+        logger=wandb_logger,
+        max_epochs=max_epochs,
+        accelerator="auto",
+        callbacks=[reconstruct_cb, pruning_cb],
+    )
+
+    trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
+
     return trainer.callback_metrics["val_loss"].item()
 
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=10)
 
     print("Number of finished trials: ", len(study.trials))
     print("Best trial:")

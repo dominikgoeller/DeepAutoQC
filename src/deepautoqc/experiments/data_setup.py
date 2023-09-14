@@ -1,5 +1,14 @@
+from pathlib import Path
+
 import lightning.pytorch as pl
+import numpy.typing as npt
 import torch
+import torchio as tio
+from lightning.pytorch import LightningDataModule
+from lightning.pytorch.utilities.types import EVAL_DATALOADERS
+from torch.utils.data import DataLoader, Dataset, random_split
+
+from deepautoqc.utils import load_from_pickle
 
 
 class TestDataModule(pl.LightningDataModule):
@@ -19,3 +28,59 @@ class TestDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(self.dummy_val, batch_size=self.batch_size)
+
+
+class BrainScanDataset(Dataset):
+    def __init__(self, data_dir):
+        self.data_paths = list(Path(data_dir).glob("*.pkl"))
+        self.transform = tio.CropOrPad((3, 704, 800))
+
+    def __len__(self):
+        return len(self.data_paths)
+
+    def __getitem__(self, index):
+        with open(self.data_paths[index], "rb") as f:
+            item = load_from_pickle(f)
+
+        img: npt.NDArray = item.img
+        label = item.label
+        label_to_int = {"usable": 0.0, "unusable": 1.0}
+        label = label_to_int[label]
+        img: npt.NDArray = img.transpose((2, 0, 1))
+        img = torch.from_numpy(img)
+
+        img = tio.ScalarImage(
+            tensor=img[None]
+        )  # adds an extra dimension for the CropOrPad function
+        img = self.transform(img)
+        img = img.data[0]  # removes extra dimension again
+
+        return img.float(), label
+
+
+class BrainScanDataModule(LightningDataModule):
+    def __init__(self, data_dir, batch_size=None):
+        super().__init__()
+        self.data_dir = data_dir
+        self.batch_size = batch_size
+
+    def prepare_data(self):
+        pass
+
+    def setup(self, stage=None):
+        brainscan_dataset = BrainScanDataset(self.data_dir)
+
+        train_len = int(0.8 * len(brainscan_dataset))
+        val_len = len(brainscan_dataset) - train_len
+
+        self.brainscan_train, self.brainscan_val = random_split(
+            brainscan_dataset, [train_len, val_len]
+        )
+
+    def train_dataloader(self):
+        return DataLoader(
+            self.brainscan_train, batch_size=self.batch_size, shuffle=True
+        )
+
+    def val_dataloader(self):
+        return DataLoader(self.brainscan_val, batch_size=self.batch_size, shuffle=False)
