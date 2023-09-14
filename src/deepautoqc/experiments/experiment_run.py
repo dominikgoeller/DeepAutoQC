@@ -1,7 +1,7 @@
 import lightning.pytorch as pl
 import optuna
+from lightning.pytorch.loggers import WandbLogger
 from optuna.integration import PyTorchLightningPruningCallback
-from pytorch_lightning.loggers import WandbLogger
 
 import wandb
 from deepautoqc.experiments.data_setup import (

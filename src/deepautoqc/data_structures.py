@@ -3,14 +3,12 @@ from collections import namedtuple
 from pathlib import Path
 from typing import List
 
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
-
-# import torch.utils.data as data
 import torchio as tio
+from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 from numpy import typing as npt
 from pythae.data.datasets import DatasetOutput
-from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 from sklearn.model_selection import train_test_split
 from torch.nn.functional import pad
 from torch.utils.data import DataLoader, Dataset, random_split
