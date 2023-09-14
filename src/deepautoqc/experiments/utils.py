@@ -36,6 +36,7 @@ class GenerateCallback(pl.Callback):
                 reconst_imgs = pl_module(input_imgs)
                 pl_module.train()
 
+            print(input_imgs)
             # You can use torchvision to create a grid or use any other method to format the images.
             imgs = torch.stack([input_imgs, reconst_imgs], dim=1).flatten(0, 1)
             grid = torchvision.utils.make_grid(imgs, nrow=2)
