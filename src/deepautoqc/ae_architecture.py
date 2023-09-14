@@ -19,11 +19,11 @@ from lightning.pytorch.loggers import WandbLogger
 from piqa import SSIM
 
 import wandb
-from deepautoqc.data_structures import (
+from deepautoqc.data_structures import (  # BrainScanDataModule,
     BrainScan,
-    BrainScanDataModule,
     BrainScanDataModule_lazy,
 )
+from deepautoqc.experiments.data_setup import BrainScanDataModule
 
 # Followed the tutorial of https://lightning.ai/docs/pytorch/stable/notebooks/course_UvA-DL/08-deep-autoencoders.html
 # Path to the folder where the pretrained models are saved
@@ -271,26 +271,9 @@ class GenerateCallback(Callback):
 def train_skullstrips(latent_dim, epochs, data_location):
     pl.seed_everything(111)
 
-    NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
-
-    if data_location == "local":
-        usable_path = Path("/Volumes/PortableSSD/procesed_usable")
-        unusable_path = Path("/Volumes/PortableSSD/processed_unusable")
-    elif data_location == "cluster":
-        usable_path = Path(
-            # "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_usable"
-            "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original"
-        )
-        unusable_path = Path(  # noqa: F841
-            "/data/gpfs-1/users/goellerd_c/work/data/skullstrip_rpt_processed_unusable"
-        )
-
-    dm = BrainScanDataModule_lazy(
-        usable_path=usable_path,
-        unusable_path=None,
-        batch_size=8,
-        num_workers=NUM_WORKERS,
-    )
+    # NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
+    data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
+    dm = BrainScanDataModule(data_dir=data_dir, batch_size=32)
     dm.prepare_data()
     dm.setup()
     wandb.init(dir="/data/gpfs-1/users/goellerd_c/work/wandb_init")
@@ -353,7 +336,7 @@ def parse_args():
         "--data_location",
         type=str,
         choices=["local", "cluster"],
-        required=True,
+        required=False,
         help="Choose between 'local' and 'cluster' to determine the data paths.",
     )
     parser.add_argument(
