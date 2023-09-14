@@ -17,6 +17,7 @@ def objective(trial):
     wandb.init(
         project="Deep-Auto-QC-Neuro",
         name=f"Trial-{trial.number}",
+        dir="/data/gpfs-1/users/goellerd_c/work/wandb_init",
         config={
             "learning_rate": trial.suggest_float("lr", 1e-6, 1e-1, log=True),
             "batch_size": trial.suggest_int("batch_size", 16, 128, step=16),
