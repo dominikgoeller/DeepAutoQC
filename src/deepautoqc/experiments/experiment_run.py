@@ -15,7 +15,7 @@ from deepautoqc.experiments.utils import GenerateCallback
 
 def objective(trial):
     wandb.init(
-        project="Deep-Auto-QC-Neuro",
+        project="Deep-Auto-QC",
         name=f"Trial-{trial.number}",
         dir="/data/gpfs-1/users/goellerd_c/work/wandb_init",
         config={
@@ -48,13 +48,16 @@ def objective(trial):
 
     reconstruct_cb = GenerateCallback(dm.val_dataloader(), every_n_epochs=5)
 
-    pruning_cb = PyTorchLightningPruningCallback(trial=trial, monitor="val_loss")
+    # pruning_cb = PyTorchLightningPruningCallback(trial=trial, monitor="val_loss")
 
     trainer = pl.Trainer(
         logger=wandb_logger,
         max_epochs=max_epochs,
         accelerator="auto",
-        callbacks=[reconstruct_cb, pruning_cb],
+        callbacks=[
+            reconstruct_cb,
+            # pruning_cb
+        ],
     )
 
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
