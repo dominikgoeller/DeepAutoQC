@@ -189,8 +189,8 @@ class VAE_Lightning(pl.LightningModule):
         return epsilon * std + mean
 
     def training_step(self, batch, batch_idx):
-        x = batch  # for testing only! REMOVE LATER
-        # x, _ = batch
+        # x = batch  # for testing only! REMOVE LATER
+        x, _ = batch
         x_reconstructed, mean, logvar = self(x)
 
         # Reconstruction loss (you can also use other metrics like BCE)
@@ -218,7 +218,18 @@ class VAE_Lightning(pl.LightningModule):
         return loss
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int):
-        loss = self._get_reconstruction_loss(batch)
+        x, _ = batch
+        x_reconstructed, mean, logvar = self(x)
+
+        # Reconstruction loss (you can also use other metrics like BCE)
+        recon_loss = F.mse_loss(x_reconstructed, x)
+        # recon_loss = self.loss_fn(x, x_reconstructed) # SSIM loss for images might be better
+
+        # KL divergence
+        kl_divergence = -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp())
+
+        # Total loss
+        loss = recon_loss + kl_divergence
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):

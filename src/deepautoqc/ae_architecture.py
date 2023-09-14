@@ -15,8 +15,8 @@ from lightning.pytorch.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
+from lightning.pytorch.loggers import WandbLogger
 from piqa import SSIM
-from pytorch_lightning.loggers import WandbLogger
 
 import wandb
 from deepautoqc.data_structures import (

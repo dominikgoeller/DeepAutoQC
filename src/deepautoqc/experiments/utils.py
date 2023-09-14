@@ -1,6 +1,6 @@
+import lightning.pytorch as pl
 import torch
 import torchvision
-from lightning.pytorch.callbacks import Callback
 from piqa import SSIM
 
 import wandb
@@ -11,7 +11,7 @@ class SSIMLoss(SSIM):
         return 1.0 - super().forward(x, y)
 
 
-class GenerateCallback(Callback):
+class GenerateCallback(pl.Callback):
     def __init__(self, dataloader, every_n_epochs=1):
         super().__init__()
         self.dataloader = iter(dataloader)
