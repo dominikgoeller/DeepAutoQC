@@ -273,7 +273,7 @@ def train_skullstrips(latent_dim, epochs, data_location):
 
     # NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
     data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
-    dm = BrainScanDataModule(data_dir=data_dir, batch_size=32)
+    dm = BrainScanDataModule(data_dir=data_dir, batch_size=512)
     dm.prepare_data()
     dm.setup()
     wandb.init(dir="/data/gpfs-1/users/goellerd_c/work/wandb_init")
