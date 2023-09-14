@@ -39,8 +39,7 @@ class BrainScanDataset(Dataset):
         return len(self.data_paths)
 
     def __getitem__(self, index):
-        with open(self.data_paths[index], "rb") as f:
-            item = load_from_pickle(f)
+        item = load_from_pickle(self.data_paths[index])
 
         img: npt.NDArray = item.img
         label = item.label
