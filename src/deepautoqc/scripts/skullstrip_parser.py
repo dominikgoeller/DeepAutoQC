@@ -160,20 +160,22 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
             combined_image, axis=0
         )  # When displaying with matplotlib.pyplot images were upside down
 
-        # img_obj = Image.fromarray(
-        #    combined_image
-        # )  # only for padding and resize function
+        img_obj = Image.fromarray(
+            (combined_image * 255).astype(np.uint8)
+        )  # only for padding and resize function
 
         resized_img = resize_with_padding(
-            combined_image, expected_size=(256, 256)
+            img_obj, expected_size=(256, 256)
         )  # 256x256x3 image now!
+        resized_img_array = np.asarray(resized_img)
+        resized_img_normalized = resized_img_array.astype(np.float32) / 255
 
         row = (i // 7) + 1
         column = (i % 7) + 1
 
         result_id = f"{dataset_name}_{base_image_name}_report-skull_{row}-{column}"
 
-        result = BrainScan(id=result_id, img=resized_img, label=ARGS.label)
+        result = BrainScan(id=result_id, img=resized_img_normalized, label=ARGS.label)
         results.append(result)
     if ARGS.user:
         webbrowser.open("file://" + image_path)
