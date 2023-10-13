@@ -7,6 +7,8 @@ import hostlist
 import lightning.pytorch as pl
 import torch
 import torch.nn.functional as F
+import torchvision
+from lightning.pytorch.callbacks import Callback
 from pythae.models import VAE, VAEConfig
 from pythae.models.base.base_utils import ModelOutput
 from pythae.models.nn import BaseDecoder, BaseEncoder
@@ -15,6 +17,7 @@ from pythae.trainers import BaseTrainer, BaseTrainerConfig
 from torch import nn
 from torch.utils.data import random_split
 
+import wandb
 from deepautoqc.ae_architecture import Decoder, Encoder
 from deepautoqc.data_structures import (
     BrainScan,
@@ -83,7 +86,6 @@ class VAE_Encoder(BaseEncoder):
 
     def forward(self, x):
         x = self.net(x)
-        print(x.shape)
         mu = self.mu_layer(x)
         log_var = F.softplus(self.log_var_layer(x))
         output = ModelOutput(embedding=mu, log_covariance=log_var)
@@ -241,6 +243,56 @@ def parse_args():
     return args
 
 
+class GenerateCallback(Callback):
+    def __init__(self, dataloader, every_n_epochs=1):
+        super().__init__()
+        self.dataloader = iter(dataloader)
+        self.every_n_epochs = every_n_epochs
+
+    def get_validation_images(self):
+        try:
+            # Get the next batch from the validation dataloader
+            dataset_output = next(self.dataloader)
+            images = dataset_output.data  # Access the 'data' attribute
+            return images
+        except StopIteration:
+            # Reset the iterator if we've reached the end of the data loader
+            self.dataloader = iter(self.dataloader)
+            dataset_output = next(self.dataloader)
+            images = dataset_output.data  # Access the 'data' attribute
+            return images
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        if trainer.current_epoch % self.every_n_epochs == 0:
+            input_imgs = self.get_validation_images().to(pl_module.device)
+            with torch.no_grad():
+                pl_module.eval()
+                model_output = pl_module(input_imgs)  # Get the output named tuple
+                reconst_imgs = (
+                    model_output.reconstruction
+                )  # Access the 'reconstruction' attribute
+                pl_module.train()
+
+            # You can use torchvision to create a grid or use any other method to format the images.
+            imgs = torch.stack([input_imgs, reconst_imgs], dim=1).flatten(0, 1)
+            grid = torchvision.utils.make_grid(imgs, nrow=2)
+
+            # Convert the PyTorch tensor to a NumPy array.
+            # Make sure to transpose the dimensions to match what wandb expects.
+            grid_np = grid.cpu().numpy().transpose((1, 2, 0))
+
+            # Log the image to wandb
+            trainer.logger.experiment.log(
+                {
+                    "Reconstructions": [
+                        wandb.Image(
+                            grid_np, caption="Original and Reconstructed Images"
+                        )
+                    ]
+                }
+            )
+
+
 def main():
     pl.seed_everything(111)
     args = parse_args()
@@ -258,17 +310,16 @@ def main():
 
     check_for_nan_and_inf(train_set)
     check_for_nan_and_inf(eval_set)
-
+    run_name = f"VAE_{args.dl}_epochs_{EPOCHS}"
+    wandb.init(project="VAE_anomaly-detection", name=run_name)
     model, training_config = build_model(epochs=EPOCHS)
-    # torch.cuda.set_device(training_config.local_rank)
-    # model = model.to(f"cuda:{training_config.local_rank}")
-    # model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[config.local_rank], output_device=config.local_rank)
-
+    reconstruction_callback = GenerateCallback(dataloader=eval_set, every_n_epochs=5)
     trainer = BaseTrainer(
         model=model,
         train_dataset=train_set,
         eval_dataset=eval_set,
         training_config=training_config,
+        callbacks=[reconstruction_callback],
     )
 
     trainer.train()
@@ -277,8 +328,6 @@ def main():
     #   model = nn.DataParallel(module=model)
     # model.to(device)
     torch.cuda.empty_cache()
-    # pipeline = train_pipeline(model=model, config=config)
-    # pipeline(train_data=train_set, eval_data=eval_set)
 
 
 if __name__ == "__main__":

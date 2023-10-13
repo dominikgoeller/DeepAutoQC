@@ -11,7 +11,7 @@ from xml.dom.minidom import Document, Element
 import cairosvg
 import numpy as np
 import numpy.typing as npt
-from PIL import Image
+from PIL import Image, ImageOps
 
 # from data_structures import BrainScan
 from deepautoqc.data_structures import BrainScan
@@ -24,35 +24,19 @@ from deepautoqc.scripts.script_utils import (
 from deepautoqc.utils import save_to_pickle
 
 
-def resize_and_pad(
-    image_array: npt.NDArray, target_width: int = 256, target_height: int = 256
-):
-    # Calculate aspect ratio
-    original_width, original_height, _ = image_array.shape
-    scale_width = target_width / original_width
-    scale_height = target_height / original_height
-    scaling_factor = min(scale_width, scale_height)
-
-    # Calculate new dimensions
-    new_width = int(original_width * scaling_factor)
-    new_height = int(original_height * scaling_factor)
-
-    # Convert to PIL Image and rescale
-    image_pil = Image.fromarray((image_array * 255).astype("uint8"))
-    rescaled_image = image_pil.resize((new_width, new_height), Image.LANCZOS)
-
-    # Create a new blank image with target dimensions
-    final_image = Image.new("RGB", (target_width, target_height))
-
-    # Calculate padding
-    padding_x = (target_width - new_width) // 2
-    padding_y = (target_height - new_height) // 2
-
-    # Paste the rescaled image onto the center of the blank canvas
-    final_image.paste(rescaled_image, (padding_x, padding_y))
-
-    # Convert back to numpy array and normalize
-    return np.array(final_image) / 255.0
+def resize_with_padding(img, expected_size=(256, 256)):
+    img.thumbnail((expected_size[0], expected_size[1]))
+    delta_width = expected_size[0] - img.size[0]
+    delta_height = expected_size[1] - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (
+        pad_width,
+        pad_height,
+        delta_width - pad_width,
+        delta_height - pad_height,
+    )
+    return ImageOps.expand(img, padding)
 
 
 def create_svg_from_elements(elements, image_array):
@@ -176,7 +160,13 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
             combined_image, axis=0
         )  # When displaying with matplotlib.pyplot images were upside down
 
-        resized_img = resize_and_pad(combined_image)  # 256x256x3 image now!
+        img_obj = Image.fromarray(
+            combined_image
+        )  # only for padding and resize function
+
+        resized_img = resize_with_padding(
+            img_obj, expected_size=(256, 256)
+        )  # 256x256x3 image now!
 
         row = (i // 7) + 1
         column = (i % 7) + 1
@@ -204,21 +194,6 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
     pickle_filename = f"{dataset_name}_{base_image_name}_report-skull.pkl"
     pickle_path = os.path.join(save_path, pickle_filename)
     save_to_pickle(data=results, file_path=pickle_path)
-
-
-# def main():
-#    ARGS = parse_args()
-#    print(f"Arguments: {ARGS}")
-#    report_type = "skull_strip"
-#    report_paths = find_reports(ARGS.datapath, report_type=report_type)
-#    print(len(report_paths))
-#    for path in report_paths:
-#        if "label-good" in os.path.basename(path):
-#            try:
-#                process_image(image_path=path, save_path=ARGS.savepath, ARGS=ARGS)
-#            except Exception as e:
-#                print(f"Error processing {path}: {e}")
-#                continue
 
 
 def worker(image_path, save_path, ARGS):
