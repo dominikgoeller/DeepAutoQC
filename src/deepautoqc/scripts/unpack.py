@@ -19,7 +19,7 @@ def unpack_pickles(path):
 
     # Create a directory for unpacked BrainScan objects
     unpacked_dir = Path(
-        "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
+        "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     )
     unpacked_dir.mkdir(exist_ok=True)
 
@@ -30,5 +30,5 @@ def unpack_pickles(path):
 
 
 unpack_pickles(
-    "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original"
+    "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original"
 )

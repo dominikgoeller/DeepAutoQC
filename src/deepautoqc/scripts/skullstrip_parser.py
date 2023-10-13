@@ -160,12 +160,12 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
             combined_image, axis=0
         )  # When displaying with matplotlib.pyplot images were upside down
 
-        img_obj = Image.fromarray(
-            combined_image
-        )  # only for padding and resize function
+        # img_obj = Image.fromarray(
+        #    combined_image
+        # )  # only for padding and resize function
 
         resized_img = resize_with_padding(
-            img_obj, expected_size=(256, 256)
+            combined_image, expected_size=(256, 256)
         )  # 256x256x3 image now!
 
         row = (i // 7) + 1
