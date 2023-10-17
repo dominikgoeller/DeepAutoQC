@@ -272,7 +272,7 @@ def train_skullstrips(latent_dim, epochs, data_location):
     pl.seed_everything(111)
 
     # NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
-    data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
+    data_dir = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     dm = BrainScanDataModule(data_dir=data_dir, batch_size=64)
     dm.prepare_data()
     dm.setup()
@@ -323,10 +323,10 @@ def train_skullstrips(latent_dim, epochs, data_location):
 
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
     # Test best model on validation and test set
-    val_result = trainer.test(model, dataloaders=dm.val_dataloader(), verbose=False)
-    test_result = trainer.test(model, dataloaders=dm.test_dataloader(), verbose=False)
-    result = {"test": test_result, "val": val_result}
-    return model, result
+    # val_result = trainer.test(model, dataloaders=dm.val_dataloader(), verbose=False)
+    # test_result = trainer.test(model, dataloaders=dm.test_dataloader(), verbose=False)
+    # result = {"test": test_result, "val": val_result}
+    return model
 
 
 def parse_args():
