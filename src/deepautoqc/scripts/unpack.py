@@ -1,4 +1,3 @@
-import os
 import pickle
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -13,7 +12,7 @@ from deepautoqc.utils import load_from_pickle, save_to_pickle
 def compress_and_save(brain_scan, output_dir, compressor):
     compressed_data = compressor.compress(pickle.dumps(brain_scan))
     with open(
-        os.path.join(output_dir, f"{brain_scan.id}.pkl.zst"), "wb"
+        Path(output_dir).joinpath(f"{brain_scan.id}.pkl.zst"), "wb"
     ) as compressed_file:
         compressed_file.write(compressed_data)
 
@@ -22,19 +21,17 @@ def unpack_single_pickle(p, unpacked_dir, compressed_dir):
     datapoints: List[BrainScan] = load_from_pickle(p)
     compressor = zstd.ZstdCompressor()
     for brain_scan in datapoints:
-        # Compress and save the data
         compress_and_save(brain_scan, compressed_dir, compressor)
 
-        # Save the original (uncompressed) data for reference if needed
         new_file_path = unpacked_dir / f"{brain_scan.id}.pkl"
         save_to_pickle(brain_scan, new_file_path)
 
 
-def unpack_pickles(path, output_dir, compressed_dir):
+def unpack_pickles(path, unpacked_dir, compressed_dir):
     pickle_paths = list(Path(path).glob("*.pkl"))
     print(f"Number of pickle files: {len(pickle_paths)}")
 
-    unpacked_dir = Path(output_dir)
+    unpacked_dir = Path(unpacked_dir)
     compressed_dir = Path(compressed_dir)
     unpacked_dir.mkdir(exist_ok=True)
     compressed_dir.mkdir(exist_ok=True)

@@ -1,9 +1,11 @@
+import pickle
 from pathlib import Path
 
 import lightning.pytorch as pl
 import numpy.typing as npt
 import torch
 import torchio as tio
+import zstandard as zstd
 from lightning.pytorch import LightningDataModule
 from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -31,15 +33,27 @@ class TestDataModule(pl.LightningDataModule):
 
 
 class BrainScanDataset(Dataset):
-    def __init__(self, data_dir):
-        self.data_paths = list(Path(data_dir).glob("*.pkl"))
+    def __init__(self, data_dir, decompress=False):
+        self.data_paths = list(Path(data_dir).glob("*.zst") if decompress else "*.pkl")
         self.transform = tio.CropOrPad((3, 704, 800))
+        self.decompress = decompress
+
+        # Create a Zstandard decompressor if needed
+        if self.decompress:
+            self.decompressor = zstd.ZstdDecompressor()
 
     def __len__(self):
         return len(self.data_paths)
 
     def __getitem__(self, index):
-        item = load_from_pickle(self.data_paths[index])
+        if self.decompress:
+            # Load and decompress the data
+            with open(self.data_paths[index], "rb") as compressed_file:
+                compressed_data = compressed_file.read()
+            uncompressed_data = self.decompressor.decompress(compressed_data)
+            item = load_from_pickle(uncompressed_data)
+        else:
+            item = load_from_pickle(self.data_paths[index])
 
         img: npt.NDArray = item.img
         label = item.label
@@ -58,16 +72,17 @@ class BrainScanDataset(Dataset):
 
 
 class BrainScanDataModule(LightningDataModule):
-    def __init__(self, data_dir, batch_size=None):
+    def __init__(self, data_dir, decompress=False, batch_size=None):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
+        self.decompress = decompress
 
     def prepare_data(self):
         pass
 
     def setup(self, stage=None):
-        brainscan_dataset = BrainScanDataset(self.data_dir)
+        brainscan_dataset = BrainScanDataset(self.data_dir, decompress=self.decompress)
 
         train_len = int(0.8 * len(brainscan_dataset))
         val_len = len(brainscan_dataset) - train_len
