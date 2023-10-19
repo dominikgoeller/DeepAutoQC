@@ -50,7 +50,7 @@ def unpack_pickles(path, output_dir, compressed_dir):
 
 if __name__ == "__main__":
     input_dir = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original"
-    output_dir = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
-    compressed_dir = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
+    output_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
+    compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
 
     unpack_pickles(input_dir, output_dir, compressed_dir)
