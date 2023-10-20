@@ -21,6 +21,7 @@ from deepautoqc.scripts.script_utils import (
     parse_args,
     parse_svg,
 )
+from deepautoqc.scripts.unpack import unpack_single_pickle
 from deepautoqc.utils import save_to_pickle
 
 
@@ -193,9 +194,10 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
                 row, col = i // 7, i % 7
                 if (row, col) in unusable_positions:
                     results[i] = result._replace(label="unusable")
-    pickle_filename = f"{dataset_name}_{base_image_name}_report-skull.pkl"
-    pickle_path = os.path.join(save_path, pickle_filename)
-    save_to_pickle(data=results, file_path=pickle_path)
+    # pickle_filename = f"{dataset_name}_{base_image_name}_report-skull.pkl"
+    # pickle_path = os.path.join(save_path, pickle_filename)
+    # save_to_pickle(data=results, file_path=pickle_path)
+    unpack_single_pickle(p=results)  # change function name and variables at times
 
 
 def worker(image_path, save_path, ARGS):
