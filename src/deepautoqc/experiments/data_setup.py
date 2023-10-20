@@ -5,7 +5,7 @@ import lightning.pytorch as pl
 import numpy.typing as npt
 import torch
 import torchio as tio
-import zstandard as zstd
+import zstandard
 from lightning.pytorch import LightningDataModule
 from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -40,7 +40,7 @@ class BrainScanDataset(Dataset):
 
         # Create a Zstandard decompressor if needed
         if self.decompress:
-            self.decompressor = zstd.ZstdDecompressor()
+            self.decompressor = zstandard.ZstdDecompressor()
 
     def __len__(self):
         return len(self.data_paths)

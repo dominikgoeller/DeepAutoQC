@@ -3,7 +3,7 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import List
 
-import zstandard as zstd
+import zstandard
 
 from deepautoqc.data_structures import BrainScan
 from deepautoqc.utils import load_from_pickle, save_to_pickle
@@ -22,7 +22,7 @@ def unpack_single_pickle(p):
     compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
     # datapoints: List[BrainScan] = load_from_pickle(p)
     datapoints: List[BrainScan] = p
-    compressor = zstd.ZstdCompressor()
+    compressor = zstandard.ZstdCompressor()
     for brain_scan in datapoints:
         compress_and_save(brain_scan, compressed_dir, compressor)
 
