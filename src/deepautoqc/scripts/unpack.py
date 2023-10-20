@@ -36,13 +36,15 @@ def unpack_pickles(path, unpacked_dir, compressed_dir):
     unpacked_dir.mkdir(exist_ok=True)
     compressed_dir.mkdir(exist_ok=True)
 
-    with ProcessPoolExecutor() as executor:
-        executor.map(
-            unpack_single_pickle,
-            pickle_paths,
-            [unpacked_dir] * len(pickle_paths),
-            [compressed_dir] * len(pickle_paths),
-        )
+    # with ProcessPoolExecutor() as executor:
+    #    executor.map(
+    #        unpack_single_pickle,
+    #        pickle_paths,
+    #        [unpacked_dir] * len(pickle_paths),
+    #        [compressed_dir] * len(pickle_paths),
+    #    )
+    for p in pickle_paths:
+        unpack_single_pickle(p, unpacked_dir, compressed_dir)
 
 
 if __name__ == "__main__":
