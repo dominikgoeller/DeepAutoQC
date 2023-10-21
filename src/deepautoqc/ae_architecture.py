@@ -268,12 +268,12 @@ class GenerateCallback(Callback):
             )
 
 
-def train_skullstrips(latent_dim, epochs, data_location):
+def train_skullstrips(latent_dim, epochs, data_location, batchsize):
     pl.seed_everything(111)
 
     # NUM_WORKERS = 12  # UserWarning: This DataLoader will create 64 worker processes in total. Our suggested max number of worker in current system is 12
     data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
-    dm = BrainScanDataModule(data_dir=data_dir, decompress=False, batch_size=512)
+    dm = BrainScanDataModule(data_dir=data_dir, decompress=False, batch_size=batchsize)
     dm.prepare_data()
     dm.setup()
     wandb.init(dir="/data/gpfs-1/users/goellerd_c/work/wandb_init")
@@ -346,6 +346,9 @@ def parse_args():
         default=20,
         help="number of epochs to train our network for",
     )
+    parser.add_argument(
+        "-bs", "--batchsize", type=int, default=64, help="Batch Size for Training"
+    )
 
     args = parser.parse_args()
 
@@ -362,7 +365,7 @@ def main():
             project="AE_anomaly_detection", config={"latent_dim": latent_dim}
         ):
             model_ld, result_ld = train_skullstrips(
-                latent_dim, args.epochs, args.data_location
+                latent_dim, args.epochs, args.data_location, args.batchsize
             )
             wandb.log({"Results": result_ld})
             # wandb.save("model.h5")  # Make sure to save the model in your desired format
