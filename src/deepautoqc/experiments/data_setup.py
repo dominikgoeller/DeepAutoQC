@@ -34,7 +34,10 @@ class TestDataModule(pl.LightningDataModule):
 
 class BrainScanDataset(Dataset):
     def __init__(self, data_dir, decompress=False):
-        self.data_paths = list(Path(data_dir).glob("*.zst") if decompress else "*.pkl")
+        if decompress:
+            self.data_paths = list(Path(data_dir).glob("*.zst"))
+        else:
+            self.data_paths = list(Path(data_dir).glob("*.pkl"))
         self.transform = tio.CropOrPad((3, 704, 800))
         self.decompress = decompress
 
