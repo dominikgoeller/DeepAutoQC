@@ -49,14 +49,20 @@ class BrainScanDataset(Dataset):
         return len(self.data_paths)
 
     def __getitem__(self, index):
-        if self.decompress:
-            # Load and decompress the data
-            with open(self.data_paths[index], "rb") as compressed_file:
-                compressed_data = compressed_file.read()
-            uncompressed_data = self.decompressor.decompress(compressed_data)
-            item = load_from_pickle(uncompressed_data)
-        else:
-            item = load_from_pickle(self.data_paths[index])
+        try:
+            if self.decompress:
+                # Load and decompress the data
+                with open(self.data_paths[index], "rb") as compressed_file:
+                    compressed_data = compressed_file.read()
+                uncompressed_data = self.decompressor.decompress(compressed_data)
+                item = load_from_pickle(uncompressed_data)
+            else:
+                item = load_from_pickle(self.data_paths[index])
+        except pickle.UnpicklingError as e:
+            print(
+                f"Skipped file: {self.data_paths[index]} due to unpickling error: {e}"
+            )
+            return self.__getitem__(index + 1)  # Skip to the next file
 
         img: npt.NDArray = item.img
         label = item.label
