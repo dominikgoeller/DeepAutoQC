@@ -297,7 +297,7 @@ def train_skullstrips(latent_dim, epochs, data_location, batchsize):
         filename=f"AE_{latent_dim}-" + "{epoch}-{step}",
     )
 
-    # generate_callback = GenerateCallback(dm.val_dataloader(), every_n_epochs=10)
+    generate_callback = GenerateCallback(dm.val_dataloader(), every_n_epochs=10)
 
     trainer = pl.Trainer(
         default_root_dir=os.path.join(CHECKPOINT_PATH, "skullstrip_%i" % latent_dim),
@@ -308,7 +308,7 @@ def train_skullstrips(latent_dim, epochs, data_location, batchsize):
         max_epochs=epochs,
         callbacks=[
             checkpoint_callback,
-            # generate_callback,
+            generate_callback,
             #    LearningRateMonitor(logging_interval="epoch"),
         ],
         logger=wandb_logger,
