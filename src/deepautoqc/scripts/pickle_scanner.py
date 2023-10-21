@@ -3,9 +3,9 @@ import pickle
 from pathlib import Path
 
 
-def count_unpickling_errors(directory):
-    eof_errors = 0
-    unpickling_errors = 0
+def find_error_files(directory):
+    eof_error_files = []
+    unpickling_error_files = []
 
     for file in Path(directory).glob("*"):
         if file.is_file():
@@ -13,16 +13,21 @@ def count_unpickling_errors(directory):
                 with open(file, "rb") as f:
                     pickle.load(f)
             except EOFError:
-                eof_errors += 1
+                eof_error_files.append(file.name)
             except pickle.UnpicklingError:
-                unpickling_errors += 1
+                unpickling_error_files.append(file.name)
 
-    return eof_errors, unpickling_errors
+    return eof_error_files, unpickling_error_files
 
 
 if __name__ == "__main__":
     directory_path = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
-    eof_errors, unpickling_errors = count_unpickling_errors(directory_path)
+    eof_error_files, unpickling_error_files = find_error_files(directory_path)
 
-    print(f"EOF Errors: {eof_errors}")
-    print(f"Unpickling Errors: {unpickling_errors}")
+    print("EOF Error Files:")
+    for file in eof_error_files:
+        print(file)
+
+    print("\nUnpickling Error Files:")
+    for file in unpickling_error_files:
+        print(file)
