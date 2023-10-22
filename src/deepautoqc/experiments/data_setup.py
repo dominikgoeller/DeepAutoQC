@@ -114,7 +114,7 @@ class BrainScanDataModule(LightningDataModule):
 
     def val_dataloader(self):
         self.val_sampler = SubsetRandomSampler(
-            torch.randint(high=len(self.brainscan_val), size=(self.num_samples,)),
+            torch.randint(high=len(self.brainscan_val), size=(2000,)),
         )
         return DataLoader(
             self.brainscan_val,
