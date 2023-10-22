@@ -108,7 +108,7 @@ class BrainScanDataModule(LightningDataModule):
             self.brainscan_train,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=0,
+            num_workers=12,
             sampler=self.train_sampler,
         )
 
@@ -120,6 +120,6 @@ class BrainScanDataModule(LightningDataModule):
             self.brainscan_val,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=0,
+            num_workers=12,
             sampler=self.val_sampler,
         )
