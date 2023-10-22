@@ -8,7 +8,13 @@ import torchio as tio
 import zstandard
 from lightning.pytorch import LightningDataModule
 from lightning.pytorch.utilities.types import EVAL_DATALOADERS
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.utils.data import (
+    DataLoader,
+    Dataset,
+    RandomSampler,
+    SubsetRandomSampler,
+    random_split,
+)
 
 from deepautoqc.utils import load_from_pickle
 
@@ -80,11 +86,11 @@ class BrainScanDataModule(LightningDataModule):
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.decompress = decompress
+        self.train_sampler = None
+        self.num_samples = 20000
+        self.val_sampler = None
 
-    def prepare_data(self):
-        pass
-
-    def setup(self, stage=None):
+    def setup(self):
         brainscan_dataset = BrainScanDataset(self.data_dir, decompress=self.decompress)
 
         train_len = int(0.8 * len(brainscan_dataset))
@@ -95,17 +101,25 @@ class BrainScanDataModule(LightningDataModule):
         )
 
     def train_dataloader(self):
+        self.train_sampler = SubsetRandomSampler(
+            torch.randint(high=len(self.brainscan_train), size=(self.num_samples,)),
+        )
         return DataLoader(
             self.brainscan_train,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=0,
+            sampler=self.train_sampler,
         )
 
     def val_dataloader(self):
+        self.val_sampler = SubsetRandomSampler(
+            torch.randint(high=len(self.brainscan_val), size=(self.num_samples,)),
+        )
         return DataLoader(
             self.brainscan_val,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=0,
+            sampler=self.val_sampler,
         )

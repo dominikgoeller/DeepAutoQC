@@ -167,6 +167,7 @@ class Autoencoder(pl.LightningModule):
         self,
         base_channel_size: int,
         latent_dim: int,
+        data_module,
         encoder_class: Type[Encoder] = Encoder,
         decoder_class: Type[Decoder] = Decoder,
         num_input_channels: int = 3,
@@ -177,12 +178,27 @@ class Autoencoder(pl.LightningModule):
         self.save_hyperparameters()
         self.encoder = encoder_class(num_input_channels, base_channel_size, latent_dim)
         self.decoder = decoder_class(num_input_channels, base_channel_size, latent_dim)
+        self.data_module = data_module
         # self.example_input_array = torch.zeros(2, num_input_channels, height, width)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.float()
         z = self.encoder(x)
         return self.decoder(z)
+
+    def on_train_epoch_start(self) -> None:
+        indices = torch.randint(
+            high=len(self.data_module.brainscan_train),
+            size=(self.data_module.num_samples,),
+        )
+        self.data_module.train_sampler.indices = indices
+
+    def on_validation_epoch_start(self) -> None:
+        indices = torch.randint(
+            high=len(self.data_module.brainscan_val),
+            size=(self.data_module.num_samples,),
+        )
+        self.data_module.val_sampler.indices = indices
 
     def _get_reconstruction_loss(
         self, batch: Tuple[torch.Tensor, torch.Tensor]
