@@ -293,7 +293,7 @@ def train_skullstrips(latent_dim, epochs, data_location, batchsize):
     dm.prepare_data()
     dm.setup()
     wandb.init(dir="/data/gpfs-1/users/goellerd_c/work/wandb_init")
-    model = Autoencoder(base_channel_size=32, latent_dim=latent_dim)
+    model = Autoencoder(base_channel_size=32, latent_dim=latent_dim, data_module=dm)
     run_name = f"AE_{latent_dim}_epochs_{epochs}"
     wandb_logger = WandbLogger(
         project="AE_anomaly_detection",
