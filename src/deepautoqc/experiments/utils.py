@@ -34,6 +34,8 @@ class GenerateCallback(pl.Callback):
             with torch.no_grad():
                 pl_module.eval()
                 reconst_imgs = pl_module(input_imgs)
+                if isinstance(reconst_imgs, tuple):
+                    reconst_imgs, _, _ = reconst_imgs  # for my vae
                 pl_module.train()
 
             print(input_imgs)
