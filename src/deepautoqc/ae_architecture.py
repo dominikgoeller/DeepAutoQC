@@ -330,19 +330,9 @@ def train_skullstrips(latent_dim, epochs, data_location, batchsize):
         logger=wandb_logger,
     )
 
-    # Check whether pretrained model exists. If yes, load it and skip training
-    # pretrained_filename = os.path.join(CHECKPOINT_PATH, "skullstrip_%i.ckpt" % latent_dim)
-    # if os.path.isfile(pretrained_filename):
-    #    print("Found pretrained model, loading...")
-    #    model = Autoencoder.load_from_checkpoint(pretrained_filename)
-    # else:
-
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
-    # Test best model on validation and test set
-    # val_result = trainer.test(model, dataloaders=dm.val_dataloader(), verbose=False)
-    # test_result = trainer.test(model, dataloaders=dm.test_dataloader(), verbose=False)
-    # result = {"test": test_result, "val": val_result}
-    return model
+
+    # return model
 
 
 def parse_args():
@@ -376,16 +366,13 @@ def main():
 
     # model_dict = {}
     # dims = [64, 128, 256, 384]
-    for latent_dim in [128]:
+    for latent_dim in [64]:
         with wandb.init(
             project="AE_anomaly_detection", config={"latent_dim": latent_dim}
         ):
-            model_ld, result_ld = train_skullstrips(
+            train_skullstrips(
                 latent_dim, args.epochs, args.data_location, args.batchsize
             )
-            wandb.log({"Results": result_ld})
-            # wandb.save("model.h5")  # Make sure to save the model in your desired format
-            # model_dict[latent_dim] = {"model": model_ld, "result": result_ld}
 
 
 if __name__ == "__main__":

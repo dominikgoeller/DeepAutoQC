@@ -162,13 +162,14 @@ class ResNet18Dec(nn.Module):
 
 
 class VAE_Lightning(pl.LightningModule):
-    def __init__(self, z_dim, lr):
+    def __init__(self, z_dim, lr, data_module):
         super().__init__()
         self.encoder = ResNet18Enc(z_dim=z_dim)
         self.decoder = ResNet18Dec(z_dim=z_dim)
         self.z_dim = z_dim
         self.loss_fn = SSIMLoss()
         self.lr = lr
+        self.data_module = data_module
 
     def forward(self, x):
         mean, logvar = self.encoder(x)
@@ -181,6 +182,20 @@ class VAE_Lightning(pl.LightningModule):
             align_corners=False,
         )  # resize to match original input shape
         return x_reconstructed, mean, logvar
+
+    def on_train_epoch_start(self) -> None:
+        indices = torch.randint(
+            high=len(self.data_module.brainscan_train),
+            size=(self.data_module.num_samples,),
+        )
+        self.data_module.train_sampler.indices = indices
+
+    def on_validation_epoch_start(self) -> None:
+        indices = torch.randint(
+            high=len(self.data_module.brainscan_val),
+            size=(self.data_module.num_samples,),
+        )
+        self.data_module.val_sampler.indices = indices
 
     @staticmethod
     def reparameterize(mean, logvar):

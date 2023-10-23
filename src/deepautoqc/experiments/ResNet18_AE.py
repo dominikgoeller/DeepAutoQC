@@ -148,18 +148,33 @@ class ResNetDecoder(nn.Module):
 
 
 class Autoencoder(pl.LightningModule):
-    def __init__(self, lr, latent_dim=128):
+    def __init__(self, lr, data_module, latent_dim=128):
         super(Autoencoder, self).__init__()
         self.encoder = ResNetEncoder(BasicBlock, [2, 2, 2, 2])
         self.decoder = ResNetDecoder(BasicBlockTranspose, [2, 2, 2, 2])
         self.loss_fn = SSIMLoss()
         self.latent_dim = latent_dim
         self.lr = lr
+        self.data_module = data_module
 
     def forward(self, x):
         x = self.encoder(x)
         x = self.decoder(x)
         return x
+
+    def on_train_epoch_start(self) -> None:
+        indices = torch.randint(
+            high=len(self.data_module.brainscan_train),
+            size=(self.data_module.num_samples,),
+        )
+        self.data_module.train_sampler.indices = indices
+
+    def on_validation_epoch_start(self) -> None:
+        indices = torch.randint(
+            high=len(self.data_module.brainscan_val),
+            size=(self.data_module.num_samples,),
+        )
+        self.data_module.val_sampler.indices = indices
 
     def _get_reconstruction_loss(
         self, batch: Tuple[torch.Tensor, torch.Tensor]

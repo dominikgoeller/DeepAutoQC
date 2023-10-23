@@ -37,14 +37,14 @@ def objective(trial):
     max_epochs = wandb.config.max_epochs
     architecture_type = wandb.config.architecture
 
-    if architecture_type == "AE":
-        model = Autoencoder(lr=lr, latent_dim=z_dim)
-    elif architecture_type == "VAE":
-        model = VAE_Lightning(z_dim=z_dim, lr=lr)
-
     data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     dm = BrainScanDataModule(data_dir=data_dir, batch_size=batch_size)
     dm.setup()
+
+    if architecture_type == "AE":
+        model = Autoencoder(lr=lr, data_module=dm, latent_dim=z_dim)
+    elif architecture_type == "VAE":
+        model = VAE_Lightning(z_dim=z_dim, lr=lr, data_module=dm)
 
     reconstruct_cb = GenerateCallback(dm.val_dataloader(), every_n_epochs=5)
 
