@@ -272,6 +272,3 @@ def test_vae():
     print(
         f"For 704x800x3 input: Reconstructed shape: {reconstructed_x2.shape}, Mean shape: {mean2.shape}, Logvar shape: {logvar2.shape}"
     )
-
-
-test_vae()
