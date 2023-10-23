@@ -20,10 +20,10 @@ def objective(trial):
         dir="/data/gpfs-1/users/goellerd_c/work/wandb_init",
         config={
             "learning_rate": trial.suggest_float("lr", 1e-6, 1e-1, log=True),
-            "batch_size": trial.suggest_int("batch_size", 16, 128, step=16),
+            "batch_size": trial.suggest_int("batch_size", 16, 64, step=16),
             "architecture": trial.suggest_categorical("architecture", ["AE", "VAE"]),
             "z_dim": trial.suggest_categorical("z_dim", [8, 16, 32, 64, 128]),
-            "max_epochs": trial.suggest_int("max_epochs", 10, 100),
+            "max_epochs": trial.suggest_int("max_epochs", 1, 5),
         },
         notes="Optuna Trial",
         tags=["optuna", "autoencoder", "VAE", "anomaly_detection"],
