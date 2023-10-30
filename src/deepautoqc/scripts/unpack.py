@@ -25,7 +25,7 @@ def unpack_single_pickle(p):
     # datapoints: List[BrainScan] = load_from_pickle(p)
     datapoints: List[BrainScan] = p
     compressor = zstandard.ZstdCompressor()
-    compressor.stream_writer()
+
     for brain_scan in datapoints:
         compress_and_save(brain_scan, compressed_dir, compressor)
 
