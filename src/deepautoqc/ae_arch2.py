@@ -169,7 +169,7 @@ def train_model(epochs: int, batch_size: int):
         deterministic="warn",
         enable_progress_bar=True,
         max_epochs=epochs,
-        checkpoint_callback=ModelCheckpoint(
+        callbacks=ModelCheckpoint(
             monitor="val_loss",
             save_weights_only=True,
             dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",
