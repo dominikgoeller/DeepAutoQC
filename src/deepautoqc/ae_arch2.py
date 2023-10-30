@@ -181,6 +181,7 @@ def train_model(epochs: int, batch_size: int):
 
 def main():
     args = parse_args()
+    torch.cuda.empty_cache()
     train_model(epochs=args.epochs, batch_size=args.batchsize)
 
 
