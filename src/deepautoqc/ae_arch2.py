@@ -166,6 +166,10 @@ def train_model(epochs: int, batch_size: int):
 
     trainer = pl.Trainer(
         logger=wandb_logger,
+        accelerator="auto",
+        devices="auto",
+        deterministic="warn",
+        enable_progress_bar=True,
         max_epochs=epochs,
         checkpoint_callback=ModelCheckpoint(
             monitor="val_loss",
