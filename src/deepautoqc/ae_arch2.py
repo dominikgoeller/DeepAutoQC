@@ -162,8 +162,6 @@ def train_model(epochs: int, batch_size: int):
 
     model = Autoencoder(data_module=dm)
 
-    print(summary(model=model, input_size=(3, 704, 800)))
-
     trainer = pl.Trainer(
         logger=wandb_logger,
         accelerator="auto",
