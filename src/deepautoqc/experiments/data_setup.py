@@ -87,7 +87,7 @@ class BrainScanDataModule(LightningDataModule):
         self.batch_size = batch_size
         self.decompress = decompress
         self.train_sampler = None
-        self.num_samples = 20000
+        self.num_samples = 2000
         self.val_sampler = None
 
     def setup(self):
