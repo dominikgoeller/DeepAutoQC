@@ -23,7 +23,7 @@ def objective(trial):
             "batch_size": trial.suggest_int("batch_size", 16, 64, step=16),
             "architecture": trial.suggest_categorical("architecture", ["AE", "VAE"]),
             "z_dim": trial.suggest_categorical("z_dim", [8, 16, 32, 64, 128]),
-            "max_epochs": trial.suggest_int("max_epochs", 1, 5),
+            "max_epochs": trial.suggest_int("max_epochs", 1, 15),
         },
         notes="Optuna Trial",
         tags=["optuna", "autoencoder", "VAE", "anomaly_detection"],
@@ -69,11 +69,11 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=10)
 
-    print("Number of finished trials: ", len(study.trials))
-    print("Best trial:")
-    trial = study.best_trial
-
-    print(f"Value: {trial.value}")
-    print("Params: ")
-    for key, value in trial.params.items():
-        print(f"    {key}: {value}")
+    with open("all_trials.txt", "w") as f:
+        for i, trial in enumerate(study.trials):
+            f.write(f"Trial Number: {i+1}\n")
+            f.write(f"Value: {trial.value}\n")
+            f.write("Params:\n")
+            for key, value in trial.params.items():
+                f.write(f"    {key}: {value}\n")
+            f.write("-" * 40 + "\n")
