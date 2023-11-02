@@ -29,7 +29,7 @@ class Encoder_AE(nn.Module):
         self.relu = nn.ReLU()
 
         self.flatten = nn.Flatten()
-        self.linear = nn.Linear(128 * 88 * 100, z_space)
+        self.linear = nn.Linear(128 * 176 * 200, z_space)
 
     def forward(self, x):
         x = self.relu(self.bn1(self.conv1(x)))
@@ -44,8 +44,8 @@ class Decoder_AE(nn.Module):
     def __init__(self, z_space=64):
         super(Decoder_AE, self).__init__()
 
-        self.linear = nn.Linear(z_space, 128 * 88 * 100)
-        self.unflatten = nn.Unflatten(1, (128, 88, 100))
+        self.linear = nn.Linear(z_space, 128 * 176 * 200)
+        self.unflatten = nn.Unflatten(1, (128, 176, 200))
 
         self.deconv1 = nn.ConvTranspose2d(
             128, 64, kernel_size=3, stride=2, padding=1, output_padding=1
