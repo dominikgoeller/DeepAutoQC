@@ -90,7 +90,7 @@ class BrainScanDataModule(LightningDataModule):
         self.train_sampler = None
         self.num_samples = 3584
         self.val_sampler = None
-        self.cpu_count = multiprocessing.cpu_count()
+        # self.cpu_count = multiprocessing.cpu_count()
 
     def setup(self):
         brainscan_dataset = BrainScanDataset(self.data_dir, decompress=self.decompress)
@@ -110,7 +110,7 @@ class BrainScanDataModule(LightningDataModule):
             self.brainscan_train,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=self.cpu_count,
+            num_workers=0,
             sampler=self.train_sampler,
         )
 
@@ -122,6 +122,6 @@ class BrainScanDataModule(LightningDataModule):
             self.brainscan_val,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=self.cpu_count,
+            num_workers=0,
             sampler=self.val_sampler,
         )
