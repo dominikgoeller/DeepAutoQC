@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import wandb
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.tuner import Tuner
 from torchsummary import summary
 from torchvision.transforms import transforms
 
@@ -167,9 +168,6 @@ def train_model(epochs: int, batch_size: int):
     data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     dm = BrainScanDataModule(data_dir=data_dir, decompress=False, batch_size=batch_size)
 
-    dm.prepare_data()
-    dm.setup()
-
     model = Autoencoder(data_module=dm)
 
     trainer = pl.Trainer(
@@ -186,6 +184,11 @@ def train_model(epochs: int, batch_size: int):
             filename="autoencoder-{epoch:02d}-{val_loss:.2f}",
         ),
     )
+    tuner = Tuner(trainer=trainer)
+    tuner.scale_batch_size(model=model, datamodule=dm, mode="power")
+
+    dm.prepare_data()
+    dm.setup()
     trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
 
 
