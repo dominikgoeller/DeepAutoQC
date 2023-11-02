@@ -176,7 +176,6 @@ def train_model(epochs: int, batch_size: int):
         devices="auto",
         deterministic="warn",
         enable_progress_bar=True,
-        accumulate_grad_batches=7,
         max_epochs=epochs,
         callbacks=ModelCheckpoint(
             monitor="val_loss",
@@ -185,8 +184,8 @@ def train_model(epochs: int, batch_size: int):
             filename="autoencoder-{epoch:02d}-{val_loss:.2f}",
         ),
     )
-    tuner = Tuner(trainer=trainer)
-    tuner.scale_batch_size(model=model, datamodule=dm, mode="power")
+    # tuner = Tuner(trainer=trainer)
+    # tuner.scale_batch_size(model=model, datamodule=dm, mode="power")
 
     dm.prepare_data()
     dm.setup()
