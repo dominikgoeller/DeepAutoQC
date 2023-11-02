@@ -1,3 +1,4 @@
+import multiprocessing
 import pickle
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -9,7 +10,8 @@ from deepautoqc.data_structures import BrainScan
 from deepautoqc.utils import load_from_pickle, save_to_pickle
 
 
-def compress_and_save(brain_scan, output_dir, compressor):
+def compress_and_save(args):
+    brain_scan, compressed_dir, compressor = args
     compressed_data = compressor.compress(pickle.dumps(brain_scan))
     with open(
         Path(output_dir).joinpath(f"{brain_scan.id}.pkl.zst"), "wb"
@@ -25,12 +27,16 @@ def unpack_single_pickle(p):
     # datapoints: List[BrainScan] = load_from_pickle(p)
     datapoints: List[BrainScan] = p
     compressor = zstandard.ZstdCompressor()
+    args = [(brain_scan, compressed_dir, compressor) for brain_scan in datapoints]
 
-    for brain_scan in datapoints:
-        compress_and_save(brain_scan, compressed_dir, compressor)
+    # Using all available CPUs
+    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+        pool.map(compress_and_save, args)
+    # for brain_scan in datapoints:
+    # compress_and_save(brain_scan, compressed_dir, compressor)
 
-        # new_file_path = unpacked_dir.joinpath(f"{brain_scan.id}.pkl")
-        # save_to_pickle(brain_scan, new_file_path)
+    # new_file_path = unpacked_dir.joinpath(f"{brain_scan.id}.pkl")
+    # save_to_pickle(brain_scan, new_file_path)
 
 
 def unpack_pickles(path, unpacked_dir, compressed_dir):
