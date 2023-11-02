@@ -35,7 +35,6 @@ class Encoder_AE(nn.Module):
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.relu(self.bn2(self.conv2(x)))
         x = self.relu(self.bn3(self.conv3(x)))
-        x = self.relu(self.bn4(self.conv4(x)))
         x = self.flatten(x)
         x = self.linear(x)
         return x
