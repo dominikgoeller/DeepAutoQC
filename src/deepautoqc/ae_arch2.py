@@ -115,12 +115,12 @@ class Autoencoder(pl.LightningModule):
         self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         loss, _, _ = self._get_reconstruction_loss(batch)
-        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int):
         loss, x, x_hat = self._get_reconstruction_loss(batch)
-        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
         if batch_idx % 20 == 0:  # Every 10 batches
             original = transforms.ToPILImage()(x[0].cpu())
             reconstructed = transforms.ToPILImage()(x_hat[0].cpu().detach())
@@ -133,7 +133,7 @@ class Autoencoder(pl.LightningModule):
 
     def test_step(self, batch: Tuple[torch.Tensor, torch.Tensor], batch_idx: int):
         loss, _, _ = self._get_reconstruction_loss(batch)
-        self.log("test_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("test_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=0.001)
