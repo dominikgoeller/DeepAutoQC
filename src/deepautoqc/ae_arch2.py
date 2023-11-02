@@ -15,48 +15,67 @@ from deepautoqc.experiments.data_setup import BrainScanDataModule
 
 
 class Encoder_AE(nn.Module):
-    def __init__(self):
+    def __init__(self, z_space=256):
         super(Encoder_AE, self).__init__()
 
         self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
 
         self.bn1 = nn.BatchNorm2d(32)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
+        self.bn4 = nn.BatchNorm2d(256)
 
         self.relu = nn.ReLU()
+
+        self.flatten = nn.Flatten()
+        self.linear = nn.Linear(256 * 88 * 100, z_space)
 
     def forward(self, x):
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.relu(self.bn2(self.conv2(x)))
         x = self.relu(self.bn3(self.conv3(x)))
+        x = self.relu(self.bn4(self.conv4(x)))
+        x = self.flatten(x)
+        x = self.linear(x)
         return x
 
 
 class Decoder_AE(nn.Module):
-    def __init__(self):
+    def __init__(self, z_space=256):
         super(Decoder_AE, self).__init__()
 
+        self.linear = nn.Linear(z_space, 256 * 88 * 100)
+        self.unflatten = nn.Unflatten(1, (256, 88, 100))
+
         self.deconv1 = nn.ConvTranspose2d(
+            256, 128, kernel_size=3, stride=2, padding=1, output_padding=1
+        )
+
+        self.deconv2 = nn.ConvTranspose2d(
             128, 64, kernel_size=3, stride=2, padding=1, output_padding=1
         )
-        self.deconv2 = nn.ConvTranspose2d(
+        self.deconv3 = nn.ConvTranspose2d(
             64, 32, kernel_size=3, stride=2, padding=1, output_padding=1
         )
-        self.deconv3 = nn.ConvTranspose2d(32, 3, kernel_size=3, stride=1, padding=1)
+        self.deconv4 = nn.ConvTranspose2d(32, 3, kernel_size=3, stride=1, padding=1)
 
-        self.bn1 = nn.BatchNorm2d(64)
-        self.bn2 = nn.BatchNorm2d(32)
+        self.bn1 = nn.BatchNorm2d(128)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.bn3 = nn.BatchNorm2d(32)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        x = self.linear(x)
+        x = self.unflatten(x)
         x = self.relu(self.bn1(self.deconv1(x)))
         x = self.relu(self.bn2(self.deconv2(x)))
-        x = self.sigmoid(self.deconv3(x))
+        x = self.relu(self.bn3(self.deconv3(x)))
+        x = self.sigmoid(self.deconv4(x))
         return x
 
 
