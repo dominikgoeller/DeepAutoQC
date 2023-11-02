@@ -24,7 +24,8 @@ def unpack_single_pickle(p):
     #    "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     # )
     # compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
-    compressed_dir = "/Volumes/PortableSSD/data/skullstrips_label_bad_unpacked"
+    compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_bad_compressed"
+    compressed_dir.mkdir(exist_ok=True)
     # datapoints: List[BrainScan] = load_from_pickle(p)
     datapoints: List[BrainScan] = p
     compressor = zstandard.ZstdCompressor()
