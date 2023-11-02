@@ -92,7 +92,7 @@ class BrainScanDataModule(LightningDataModule):
         self.val_sampler = None
         # self.cpu_count = multiprocessing.cpu_count()
 
-    def setup(self):
+    def setup(self, stage=None):
         brainscan_dataset = BrainScanDataset(self.data_dir, decompress=self.decompress)
 
         train_len = int(0.8 * len(brainscan_dataset))

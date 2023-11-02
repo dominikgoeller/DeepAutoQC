@@ -176,6 +176,7 @@ def train_model(epochs: int, batch_size: int):
         devices="auto",
         deterministic="warn",
         enable_progress_bar=True,
+        accumulate_grad_batches=7,
         max_epochs=epochs,
         callbacks=ModelCheckpoint(
             monitor="val_loss",
