@@ -84,6 +84,13 @@ def parse_args():
         choices=["usable", "unusable"],
         help="Automatically sets the label to either usable or unusable",
     )
+    parser.add_argument(
+        "-c",
+        "--compress",
+        type=bool,
+        default=False,
+        help="Set to True or False for data compression",
+    )
     args = parser.parse_args()
 
     return args

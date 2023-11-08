@@ -61,7 +61,9 @@ class BrainScanDataset(Dataset):
             with open(self.data_paths[index], "rb") as compressed_file:
                 compressed_data = compressed_file.read()
                 uncompressed_data = self.decompressor.decompress(compressed_data)
-                item = load_from_pickle(uncompressed_data)
+                item = load_from_pickle(
+                    uncompressed_data
+                )  # might need to switch to pickle.loads TODO
         else:
             item = load_from_pickle(self.data_paths[index])
 

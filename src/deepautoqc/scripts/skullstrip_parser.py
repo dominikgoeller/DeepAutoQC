@@ -2,15 +2,18 @@ import base64
 import io
 import multiprocessing
 import os
+import pickle
 import re
 import webbrowser
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Union
 from xml.dom.minidom import Document, Element
 
 import cairosvg
 import numpy as np
 import numpy.typing as npt
+import zstandard
 from PIL import Image, ImageOps
 
 # from data_structures import BrainScan
@@ -95,7 +98,9 @@ def svgRead(
     return image_without_alpha
 
 
-def process_image(image_path: str, save_path: str, ARGS) -> None:
+def process_image(
+    image_path: str, save_path: str, ARGS, compress: bool = False
+) -> None:
     axes_elements = parse_svg(image_path)
     results = []
 
@@ -194,15 +199,29 @@ def process_image(image_path: str, save_path: str, ARGS) -> None:
                 row, col = i // 7, i % 7
                 if (row, col) in unusable_positions:
                     results[i] = result._replace(label="unusable")
-    # pickle_filename = f"{dataset_name}_{base_image_name}_report-skull.pkl"
+
+    if compress:
+        zstd_filename = f"{dataset_name}_{base_image_name}_report-skullstrip.pkl.zst"
+        compressor = zstandard.ZstdCompressor()
+        compressed_data = compressor.compress(
+            pickle.dumps(results)
+        )  # use pickle.loads for unpacking
+        with open(Path(save_path).joinpath(zstd_filename), "wb") as compressed_file:
+            compressed_file.write(compressed_data)
+    # pickle_filename = f"{dataset_name}_{base_image_name}_report-skullstrip.pkl"
     # pickle_path = os.path.join(save_path, pickle_filename)
     # save_to_pickle(data=results, file_path=pickle_path)
-    unpack_single_pickle(p=results)  # change function name and variables at times
+    # unpack_single_pickle(p=results)  # change function name and variables at times
 
 
 def worker(image_path, save_path, ARGS):
     try:
-        process_image(image_path=image_path, save_path=save_path, ARGS=ARGS)
+        process_image(
+            image_path=image_path,
+            save_path=save_path,
+            ARGS=ARGS,
+            compress=ARGS.compress,
+        )
     except Exception as e:
         print(f"Error processing {image_path}: {e}")
         return
