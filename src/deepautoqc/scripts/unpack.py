@@ -19,27 +19,21 @@ def compress_and_save(brain_scan, compressed_dir, compressor):
         compressed_file.write(compressed_data)
 
 
-def unpack_single_pickle(p):
+def unpack_single_pickle(p, save_path):
     # unpacked_dir = Path(
     #    "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     # )
-    compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
+    # compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
     # compressed_dir = Path(
     #    "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_bad_compressed"
     # )
+    compressed_dir = save_path
     compressed_dir.mkdir(exist_ok=True)
     # datapoints: List[BrainScan] = load_from_pickle(p)
     datapoints: List[BrainScan] = p
     compressor = zstandard.ZstdCompressor()
-
-    # Using all available CPUs
-    # with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-    # pool.map(compress_and_save, args)
     for brain_scan in datapoints:
         compress_and_save(brain_scan, compressed_dir, compressor)
-
-    # new_file_path = unpacked_dir.joinpath(f"{brain_scan.id}.pkl")
-    # save_to_pickle(brain_scan, new_file_path)
 
 
 def unpack_pickles(path, unpacked_dir, compressed_dir):

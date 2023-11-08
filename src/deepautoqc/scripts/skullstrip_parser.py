@@ -208,10 +208,13 @@ def process_image(
         )  # use pickle.loads for unpacking
         with open(Path(save_path).joinpath(zstd_filename), "wb") as compressed_file:
             compressed_file.write(compressed_data)
-    # pickle_filename = f"{dataset_name}_{base_image_name}_report-skullstrip.pkl"
-    # pickle_path = os.path.join(save_path, pickle_filename)
-    # save_to_pickle(data=results, file_path=pickle_path)
-    # unpack_single_pickle(p=results)  # change function name and variables at times
+    elif compress is False:
+        # pickle_filename = f"{dataset_name}_{base_image_name}_report-skullstrip.pkl"
+        # pickle_path = os.path.join(save_path, pickle_filename)
+        # save_to_pickle(data=results, file_path=pickle_path)
+        unpack_single_pickle(
+            p=results, save_path=save_path
+        )  # change function name and variables at times
 
 
 def worker(image_path, save_path, ARGS):
