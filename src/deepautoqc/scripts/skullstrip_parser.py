@@ -239,7 +239,7 @@ def main():
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
 
     for path in report_paths:
-        if "label-bad" in os.path.basename(path):
+        if "label-good" in os.path.basename(path):
             pool.apply_async(worker, args=(path, ARGS.savepath, ARGS))
 
     pool.close()
