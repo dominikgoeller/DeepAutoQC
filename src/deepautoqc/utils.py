@@ -54,14 +54,3 @@ def load_from_pickle(file_path: str) -> list:
     with open(file_path, "rb") as file:
         augmented_data = pickle.load(file)
     return augmented_data
-
-
-def loadS_from_pickle(file_path: str) -> list:
-    """
-    This function loads the byte stream stored in a file
-    """
-    with open(file_path, "rb") as file:
-        byte_data = file.read()
-
-    item = pickle.loads(byte_data)
-    return item

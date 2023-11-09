@@ -8,7 +8,7 @@
 # https://en.wikipedia.org/wiki/Rule_of_three_(statistics)
 
 import argparse
-import logging
+import pickle
 
 # load train_compr_unpacked report_paths
 # x_array= ae_model.encoder(brainscan.img) for i in report_paths
@@ -32,7 +32,6 @@ from sklearn.svm import OneClassSVM
 
 from deepautoqc.ae_arch2 import Autoencoder
 from deepautoqc.data_structures import BrainScan
-from deepautoqc.utils import loadS_from_pickle
 
 
 def load_train_data(train_path):
@@ -60,12 +59,10 @@ def load_model(ckpt_path):
 def single_brainscan_loader(scan_path):
     decompressor = zstandard.ZstdDecompressor()
     with open(scan_path, "rb") as compressed_file:
-        print("SCANPATH", scan_path)
+        # print("SCANPATH", scan_path)
         compressed_data = compressed_file.read()
-        uncompressed_data = decompressor.decompress(compressed_data)
-        item: BrainScan = loadS_from_pickle(
-            uncompressed_data
-        )  # might need to switch to pickle.loads() TODO
+    uncompressed_data = decompressor.decompress(compressed_data)
+    item: BrainScan = pickle.loads(uncompressed_data)
     return item
 
 
