@@ -81,7 +81,7 @@ def build_feature_matrix(model: Autoencoder, datapoints_generator):
     X = []
     i = 0
     for path in datapoints_generator:
-        if i > 200:
+        if i > 2000:
             break
         brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
         img_tensor = load_to_tensor(img=brainscan_obj.img)
@@ -98,8 +98,6 @@ def build_feature_matrix(model: Autoencoder, datapoints_generator):
 
 def fit_classifier(feature_matrix):
     clf = OneClassSVM().fit(feature_matrix)
-    # possible hyperparameter tuning
-    clf.predict()
     return clf
 
 
