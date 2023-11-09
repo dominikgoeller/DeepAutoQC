@@ -56,7 +56,8 @@ def load_test_data(test_path):
 def load_model(ckpt_path):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = Autoencoder().load_from_checkpoint(
-        checkpoint_path=ckpt_path, map_location=device, data_module=None
+        checkpoint_path=ckpt_path,
+        map_location=device,
     )
     return model
 

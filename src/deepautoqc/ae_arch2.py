@@ -72,7 +72,7 @@ class Decoder_AE(nn.Module):
 
 
 class Autoencoder(pl.LightningModule):
-    def __init__(self, data_module):
+    def __init__(self, data_module=None):
         super(Autoencoder, self).__init__()
 
         self.encoder = Encoder_AE()
@@ -181,7 +181,7 @@ def train_model(epochs: int, batch_size: int):
             monitor="val_loss",
             save_weights_only=True,
             dirpath="/data/gpfs-1/users/goellerd_c/work/wandb_logs",
-            filename="autoencoder-{epoch:02d}-{val_loss:.2f}",
+            filename="autoencoder-{epoch:02d}",
         ),
     )
     # tuner = Tuner(trainer=trainer)
