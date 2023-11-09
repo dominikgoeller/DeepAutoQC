@@ -79,7 +79,10 @@ def load_to_tensor(img: np.ndarray) -> torch.Tensor:
 
 def build_feature_matrix(model: Autoencoder, datapoints_generator):
     X = []
+    i = 0
     for path in datapoints_generator:
+        if i > 200:
+            break
         brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
         img_tensor = load_to_tensor(img=brainscan_obj.img)
         img_tensor = img_tensor.to(model.device).unsqueeze(0)
@@ -87,6 +90,7 @@ def build_feature_matrix(model: Autoencoder, datapoints_generator):
             feature_vector = model.encoder(img_tensor)
             feature_vector = feature_vector.squeeze(0)
             X.append(feature_vector.cpu().numpy())
+        i += 1
     X_array = np.array(X)
     print(X_array.shape)
     return X_array
