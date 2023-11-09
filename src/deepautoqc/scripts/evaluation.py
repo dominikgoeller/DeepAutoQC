@@ -115,6 +115,7 @@ def fit_classifier(feature_matrix):
 def build_test_data_matrix(test_path_generator, model: Autoencoder):
     test_dict: Dict = {}  # key=filename, value=List of img encoded vectors
     for path in test_path_generator:
+        path_name = path.name
         brainscan_list: List[BrainScan] = report_brainscan_loader(scan_path=path)
         for brainscan_obj in brainscan_list:
             img_tensor = load_to_tensor(img=brainscan_obj.img)
@@ -122,7 +123,7 @@ def build_test_data_matrix(test_path_generator, model: Autoencoder):
             with torch.no_grad():
                 feature_vector = model.encoder(img_tensor)
                 feature_vector = feature_vector.squeeze(0)
-                test_dict[path.name].append(feature_vector.cpu().numpy())
+                test_dict[path_name].append(feature_vector.cpu().numpy())
     return test_dict
 
 
