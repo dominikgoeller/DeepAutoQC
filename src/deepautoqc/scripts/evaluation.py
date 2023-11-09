@@ -39,17 +39,12 @@ def load_train_data(train_path):
     """Returns generator object of train data paths"""
     train_path = Path(train_path)
     train_path_generator = train_path.glob("*.zst")
-    # logging.Logger().info(f"Number of datapoint paths: {len(list(train_path_generator))}")
-    # print(len(list(train_path_generator))) # generators get exhausted after calling list on them
     return train_path_generator
 
 
 def load_test_data(test_path):
     test_path = Path(test_path)
     test_path_generator = test_path.glob("*.zst")
-    # logging.Logger().info(f"Number of datapoint paths: {len(list(test_path_generator))}")
-    # print(len(list(test_path_generator)))
-
     return test_path_generator
 
 
@@ -65,6 +60,7 @@ def load_model(ckpt_path):
 def single_brainscan_loader(scan_path):
     decompressor = zstandard.ZstdDecompressor()
     with open(scan_path, "rb") as compressed_file:
+        print("SCANPATH", scan_path)
         compressed_data = compressed_file.read()
         uncompressed_data = decompressor.decompress(compressed_data)
         item: BrainScan = loadS_from_pickle(
