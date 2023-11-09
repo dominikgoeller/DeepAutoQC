@@ -22,6 +22,7 @@ import pickle
 # for each brainscan.img in List[BrainScan] if classifier.predict(brainscan.img) is outlier --> negative_pred otherwise positive_pred
 # from results_dict build confusion_matrix
 from pathlib import Path
+from typing import Dict, List
 
 import numpy as np
 import torch
@@ -66,6 +67,16 @@ def single_brainscan_loader(scan_path):
     return item
 
 
+def report_brainscan_loader(scan_path):
+    decompressor = zstandard.ZstdDecompressor()
+    with open(scan_path, "rb") as compressed_file:
+        # print("SCANPATH", scan_path)
+        compressed_data = compressed_file.read()
+    uncompressed_data = decompressor.decompress(compressed_data)
+    items: List[BrainScan] = pickle.loads(uncompressed_data)
+    return items
+
+
 def load_to_tensor(img: np.ndarray) -> torch.Tensor:
     transform = tio.CropOrPad((3, 704, 800))
     img = img.transpose((2, 0, 1))
@@ -81,7 +92,7 @@ def build_feature_matrix(model: Autoencoder, datapoints_generator):
     X = []
     i = 0
     for path in datapoints_generator:
-        if i > 2000:
+        if i > 1000:
             break
         brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
         img_tensor = load_to_tensor(img=brainscan_obj.img)
@@ -102,26 +113,32 @@ def fit_classifier(feature_matrix):
 
 
 def build_test_data_matrix(test_path_generator, model: Autoencoder):
-    test_dict = {}  # key=filename, value=img encoded vector
+    test_dict: Dict = {}  # key=filename, value=List of img encoded vectors
     for path in test_path_generator:
-        brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
-        img_tensor = load_to_tensor(img=brainscan_obj.img)
-        img_tensor = img_tensor.to(model.device).unsqueeze(0)
-        with torch.no_grad():
-            feature_vector = model.encoder(img_tensor)
-            feature_vector = feature_vector.squeeze(0)
-            test_dict[path.name] = feature_vector.cpu().numpy()
+        brainscan_list: List[BrainScan] = report_brainscan_loader(scan_path=path)
+        for brainscan_obj in brainscan_list:
+            img_tensor = load_to_tensor(img=brainscan_obj.img)
+            img_tensor = img_tensor.to(model.device).unsqueeze(0)
+            with torch.no_grad():
+                feature_vector = model.encoder(img_tensor)
+                feature_vector = feature_vector.squeeze(0)
+                test_dict[path.name].append(feature_vector.cpu().numpy())
     return test_dict
 
 
 def make_predictions(clf, test_dict):
     results_dict = {}  # key = name containing label, value = prediction
-    x_test_array = np.array(list(test_dict.values()))
-    x_test_names = list(test_dict.keys())
-    preds = clf.predict(x_test_array)  # one class svm outputs +1 inliers or -1 outliers
-    print(preds.shape)
-    for name, pred in zip(x_test_names, preds):
-        results_dict[name] = pred
+    # x_test_array = np.array(list(test_dict.values()))
+    # x_test_names = list(test_dict.keys())
+    # preds = clf.predict(x_test_array)  # one class svm outputs +1 inliers or -1 outliers
+    for k, v in test_dict.items():
+        x_array = np.array(v)
+        print("array shape of one report", x_array.shape)
+        preds = clf.predict(x_array)
+        if -1 in preds:  # outlier detected inside this report!
+            print("predictions for this report", preds)
+            results_dict[k] = -1
+        results_dict[k] = 1  # no outliers detected
     return results_dict
 
 
