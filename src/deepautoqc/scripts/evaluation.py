@@ -32,7 +32,7 @@ from sklearn.svm import OneClassSVM
 
 from deepautoqc.ae_arch2 import Autoencoder
 from deepautoqc.data_structures import BrainScan
-from deepautoqc.utils import load_from_pickle
+from deepautoqc.utils import loadS_from_pickle
 
 
 def load_train_data(train_path):
@@ -67,7 +67,7 @@ def single_brainscan_loader(scan_path):
     with open(scan_path, "rb") as compressed_file:
         compressed_data = compressed_file.read()
         uncompressed_data = decompressor.decompress(compressed_data)
-        item: BrainScan = load_from_pickle(
+        item: BrainScan = loadS_from_pickle(
             uncompressed_data
         )  # might need to switch to pickle.loads() TODO
     return item
