@@ -117,6 +117,8 @@ def build_test_data_matrix(test_path_generator, model: Autoencoder):
     for path in test_path_generator:
         path_name = path.name
         brainscan_list: List[BrainScan] = report_brainscan_loader(scan_path=path)
+        if path.name not in test_dict:
+            test_dict[path.name] = []
         for brainscan_obj in brainscan_list:
             img_tensor = load_to_tensor(img=brainscan_obj.img)
             img_tensor = img_tensor.to(model.device).unsqueeze(0)
