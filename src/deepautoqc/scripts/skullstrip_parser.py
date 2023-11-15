@@ -248,7 +248,7 @@ def find_reports_random(directory, report_type):
 
     # Filter out files that contain 'label-good' and the specific report type
     good_label_files = [
-        file
+        str(file)
         for file in path.iterdir()
         if "label-good" in file.name and report_type in file.name
     ]
