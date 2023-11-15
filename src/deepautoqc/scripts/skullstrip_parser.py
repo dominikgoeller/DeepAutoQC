@@ -87,6 +87,9 @@ def transform_to_svg(matrix) -> str:
 def svgRead(
     filename: Union[str, io.BytesIO], image_array: npt.NDArray[np.float64]
 ) -> npt.NDArray[Any]:
+    if isinstance(filename, Path):
+        filename = str(filename)
+
     png_content = cairosvg.svg2png(
         bytestring=filename,
         output_height=image_array.shape[0],
