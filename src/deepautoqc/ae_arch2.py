@@ -165,7 +165,7 @@ def train_model(epochs: int, batch_size: int):
         save_dir="/data/gpfs-1/users/goellerd_c/work/git_repos/DeepAutoQC/src/deepautoqc/wandb_logs"
     )
 
-    data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
+    data_dir = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/train_compr_unpacked"
     dm = BrainScanDataModule(data_dir=data_dir, decompress=False, batch_size=batch_size)
 
     model = Autoencoder(data_module=dm)
