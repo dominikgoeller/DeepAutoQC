@@ -3,6 +3,7 @@ import io
 import multiprocessing
 import os
 import pickle
+import random
 import re
 import webbrowser
 from copy import deepcopy
@@ -230,23 +231,58 @@ def worker(image_path, save_path, ARGS):
         return
 
 
+def delete_files(directory, filenames_to_delete):
+    # Delete files that match the given filenames
+    path = Path(directory)
+    for file in path.iterdir():
+        if any(fn in file.name for fn in filenames_to_delete):
+            file.unlink()
+
+
+def find_reports_random(directory, report_type):
+    # Create a Path object for the directory
+    path = Path(directory)
+
+    # Filter out files that contain 'label-good' and the specific report type
+    good_label_files = [
+        file
+        for file in path.iterdir()
+        if "label-good" in file.name and report_type in file.name
+    ]
+
+    # Randomly select 300 file paths
+    num_files_to_select = min(300, len(good_label_files))
+    selected_files = random.sample(good_label_files, num_files_to_select)
+
+    return selected_files
+
+
 def main():
     ARGS = parse_args()
     print(f"Arguments: {ARGS}")
 
     report_type = "skull_strip"
-    report_paths = find_reports(ARGS.datapath, report_type=report_type)
+    # report_paths = find_reports(ARGS.datapath, report_type=report_type)
+    report_paths = find_reports_random(ARGS.datapath, report_type=report_type)
 
     print(f"Found {len(report_paths)} reports to process.")
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
 
     for path in report_paths:
-        if "label-bad" in os.path.basename(path):
+        if "label-good" in os.path.basename(path):
             pool.apply_async(worker, args=(path, ARGS.savepath, ARGS))
 
     pool.close()
     pool.join()
+
+    # Extract stripped file names for deletion
+    stripped_file_names = [path.stem.split("_label-good")[0] for path in report_paths]
+
+    delete_directory = Path(
+        "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/train_compr_unpacked"
+    )
+    delete_files(delete_directory, stripped_file_names)
 
     print("All tasks completed.")
 
