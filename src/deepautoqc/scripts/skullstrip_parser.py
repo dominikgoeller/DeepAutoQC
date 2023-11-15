@@ -279,8 +279,9 @@ def main():
     pool.close()
     pool.join()
 
-    # Extract stripped file names for deletion
-    stripped_file_names = [path.stem.split("_label-good")[0] for path in report_paths]
+    stripped_file_names = [
+        Path(path_str).stem.split("_label-good")[0] for path_str in report_paths
+    ]
 
     delete_directory = Path(
         "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/train_compr_unpacked"
