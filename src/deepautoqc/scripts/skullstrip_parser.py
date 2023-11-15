@@ -265,8 +265,8 @@ def main():
     print(f"Arguments: {ARGS}")
 
     report_type = "skull_strip"
-    # report_paths = find_reports(ARGS.datapath, report_type=report_type)
-    report_paths = find_reports_random(ARGS.datapath, report_type=report_type)
+    report_paths = find_reports(ARGS.datapath, report_type=report_type)
+    # report_paths = find_reports_random(ARGS.datapath, report_type=report_type)
 
     print(f"Found {len(report_paths)} reports to process.")
 
@@ -278,15 +278,6 @@ def main():
 
     pool.close()
     pool.join()
-
-    stripped_file_names = [
-        Path(path_str).stem.split("_label-good")[0] for path_str in report_paths
-    ]
-
-    delete_directory = Path(
-        "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/train_compr_unpacked"
-    )
-    delete_files(delete_directory, stripped_file_names)
 
     print("All tasks completed.")
 
