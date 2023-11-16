@@ -126,6 +126,7 @@ def build_feature_matrix(model: Autoencoder, datapoints_generator):
 
 def fit_classifier(feature_matrix):
     clf = OneClassSVM().fit(feature_matrix)
+
     return clf
 
 
@@ -203,7 +204,7 @@ def visualize_features(features):
     labels = None
 
     plt.figure(figsize=(10, 8))
-    sns.scatterplot(
+    plot = sns.scatterplot(
         x=embedding[:, 0],
         y=embedding[:, 1],
         hue=labels,
@@ -211,10 +212,10 @@ def visualize_features(features):
         legend="full",
     )
     plt.title("UMAP projection of the Features")
-    plot_filename = "/mnt/data/umap_visualization.png"
+    # plot_filename = ""
     # plt.savefig(plot_filename)
 
-    wandb.log({"UMAP Visualization": wandb.Image(plot_filename)})
+    wandb.log({"UMAP Visualization": wandb.Image(plot)})
 
     wandb.finish()
 
