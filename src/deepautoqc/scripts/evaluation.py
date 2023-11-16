@@ -207,7 +207,7 @@ def visualize_features(features):
         x=embedding[:, 0],
         y=embedding[:, 1],
         hue=labels,
-        palette=sns.color_palette("hsv", len(set(labels))),
+        palette=sns.color_palette("hsv", None),
         legend="full",
     )
     plt.title("UMAP projection of the Features")
