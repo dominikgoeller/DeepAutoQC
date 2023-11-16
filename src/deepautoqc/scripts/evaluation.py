@@ -1,4 +1,4 @@
-# goal: zero false negatives (bad classified as good) at how many false positives (good classified as bad)
+# goal: zero false positive (bad classified as good) at how many false negatives (good classified as bad)
 # we want to minimize the manual classification task to reduce number of datapoints researchers need to re-evaluate (all bad classified samples)
 
 # we need: model, test_data in form of List[BrainScan]=label.good/bad, test_data contains bad and good samples (ratio is irrelevant?)
@@ -22,7 +22,7 @@ import pickle
 # for each brainscan.img in List[BrainScan] if classifier.predict(brainscan.img) is outlier --> negative_pred otherwise positive_pred
 # from results_dict build confusion_matrix
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Generator, List
 
 import numpy as np
 import torch
@@ -35,25 +35,38 @@ from deepautoqc.ae_arch2 import Autoencoder
 from deepautoqc.data_structures import BrainScan
 
 
-def load_train_data(train_path):
-    """Returns generator object of train data paths"""
-    train_path = Path(train_path)
-    train_path_generator = train_path.glob("*.zst")
-    return train_path_generator
+def load_data(data_path: str) -> Generator[Path, None, None]:
+    """
+    Load data paths from the specified directory.
+
+    Parameters:
+    - data_path (str): The file path to the data directory.
+
+    Returns:
+    - Generator[Path]: A generator object that yields paths to data files.
+    """
+    path = Path(data_path)
+    return path.glob("*.zst")
 
 
-def load_test_data(test_path):
-    test_path = Path(test_path)
-    test_path_generator = test_path.glob("*.zst")
-    return test_path_generator
+def load_model(ckpt_path: str) -> Autoencoder:
+    """
+    Load the autoencoder model from a checkpoint.
 
+    Parameters:
+    - ckpt_path (str): The file path to the model checkpoint.
 
-def load_model(ckpt_path):
+    Returns:
+    - Autoencoder: The loaded autoencoder model.
+    """
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = Autoencoder().load_from_checkpoint(
-        checkpoint_path=ckpt_path,
-        map_location=device,
-    )
+    try:
+        model = Autoencoder().load_from_checkpoint(
+            checkpoint_path=ckpt_path, map_location=device
+        )
+    except FileNotFoundError:
+        print(f"Checkpoint file not found at {ckpt_path}.")
+        raise
     return model
 
 
@@ -130,34 +143,52 @@ def build_test_data_matrix(test_path_generator, model: Autoencoder):
 
 
 def make_predictions(clf, test_dict):
-    results_dict = (
-        {}
-    )  # key = name containing label, value = prediction for entire report!!
-    # x_test_array = np.array(list(test_dict.values()))
-    # x_test_names = list(test_dict.keys())
-    # preds = clf.predict(x_test_array)  # one class svm outputs +1 inliers or -1 outliers
-    for k, v in test_dict.items():
-        x_array = np.array(v)
-        print("array shape of one report", x_array.shape)
-        preds = clf.predict(x_array)
-        if -1 in preds:  # outlier detected inside this report!
-            print("predictions for this report", preds)
-            results_dict[k] = -1
-        results_dict[k] = 1  # no outliers detected
+    """
+    Make predictions for each report in the test dictionary using the provided classifier.
+    Each report is composed of several data points, and the report is considered an outlier
+    if any of these data points is classified as an outlier by the classifier.
+
+    Parameters:
+    - clf: The trained classifier with a predict method.
+    - test_dict (dict): A dictionary with keys as report names and values as lists of data for prediction.
+
+    Returns:
+    - results_dict (dict): A dictionary with keys as report names and values as the prediction results.
+    """
+    results_dict = {}
+
+    for report_name, report_data in test_dict.items():
+        x_matrix = np.array(report_data)
+        print(x_matrix.shape)
+        if x_matrix.shape[1] != 64:
+            raise ValueError(
+                f"Data for report {report_name} is not in the expected shape (21, 64)"
+            )
+        predictions = clf.predict(x_matrix)
+        results_dict[report_name] = -1 if -1 in predictions else 1
+
     return results_dict
 
 
-def calculate_conf_matrix(results_dict: dict):
+def calculate_conf_matrix(results_dict: Dict[str, int]) -> None:
+    """
+    Calculate and print the confusion matrix from the prediction results.
+
+    Parameters:
+    - results_dict (dict): A dictionary with keys as names with labels and values as predictions.
+    """
     y_true = []
     y_pred = []
     for k, v in results_dict.items():
-        if "label-bad" in k:
-            y_true.append(-1)  # outlier
-        else:
-            y_true.append(1)  # inlier = label good
+        y_true.append(-1 if "label-bad" in k else 1)
         y_pred.append(v)
-    conf_matrix = confusion_matrix(y_true=y_true, y_pred=y_pred)
-    print(conf_matrix)
+    CM = confusion_matrix(y_true=y_true, y_pred=y_pred)
+    print(CM)
+    _ = CM[0][0]  # TN bad as bad
+    FN = CM[1][0]
+    _ = CM[1][1]  # TP good as good
+    FP = CM[0][1]
+    print(f"FP (bad as good): {FP} versus FN (good as bad): {FN}")
 
 
 def visualize_features():
@@ -186,7 +217,7 @@ def parse_args():
 def main():
     ARGS = parse_args()
     train_path = ARGS.train
-    train_data_gen = load_train_data(train_path=train_path)
+    train_data_gen = load_data(data_path=train_path)
 
     ckpt_path = ARGS.ckptpath
     model = load_model(ckpt_path=ckpt_path)
@@ -196,7 +227,7 @@ def main():
     clf = fit_classifier(feature_matrix=X_array)
 
     test_path = ARGS.test
-    test_path_gen = load_test_data(test_path=test_path)
+    test_path_gen = load_data(data_path=test_path)
 
     test_dict = build_test_data_matrix(test_path_generator=test_path_gen, model=model)
 
