@@ -24,9 +24,13 @@ import pickle
 from pathlib import Path
 from typing import Dict, Generator, List
 
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import torch
 import torchio as tio
+import umap.umap_ as umap
+import wandb
 import zstandard
 from sklearn.metrics import confusion_matrix
 from sklearn.svm import OneClassSVM
@@ -191,9 +195,28 @@ def calculate_conf_matrix(results_dict: Dict[str, int]) -> None:
     print(f"FP (bad as good): {FP} versus FN (good as bad): {FN}")
 
 
-def visualize_features():
-    # TODO
-    pass
+def visualize_features(features):
+    wandb.init(project="Feature Visualization", entity="dominikgoeller")
+
+    reducer = umap.UMAP(random_state=42)
+    embedding = reducer.fit_transform(features)
+    labels = None
+
+    plt.figure(figsize=(10, 8))
+    sns.scatterplot(
+        x=embedding[:, 0],
+        y=embedding[:, 1],
+        hue=labels,
+        palette=sns.color_palette("hsv", len(set(labels))),
+        legend="full",
+    )
+    plt.title("UMAP projection of the Features")
+    plot_filename = "/mnt/data/umap_visualization.png"
+    # plt.savefig(plot_filename)
+
+    wandb.log({"UMAP Visualization": wandb.Image(plot_filename)})
+
+    wandb.finish()
 
 
 def parse_args():
@@ -223,6 +246,8 @@ def main():
     model = load_model(ckpt_path=ckpt_path)
 
     X_array = build_feature_matrix(model=model, datapoints_generator=train_data_gen)
+
+    visualize_features(features=X_array)
 
     clf = fit_classifier(feature_matrix=X_array)
 
