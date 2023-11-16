@@ -92,7 +92,7 @@ def build_feature_matrix(model: Autoencoder, datapoints_generator):
     X = []
     i = 0
     for path in datapoints_generator:
-        if i > 1000:
+        if i > 25000:
             break
         brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
         img_tensor = load_to_tensor(img=brainscan_obj.img)
@@ -130,7 +130,9 @@ def build_test_data_matrix(test_path_generator, model: Autoencoder):
 
 
 def make_predictions(clf, test_dict):
-    results_dict = {}  # key = name containing label, value = prediction
+    results_dict = (
+        {}
+    )  # key = name containing label, value = prediction for entire report!!
     # x_test_array = np.array(list(test_dict.values()))
     # x_test_names = list(test_dict.keys())
     # preds = clf.predict(x_test_array)  # one class svm outputs +1 inliers or -1 outliers
