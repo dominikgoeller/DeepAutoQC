@@ -9,6 +9,7 @@
 
 import argparse
 import pickle
+import re
 
 # load train_compr_unpacked report_paths
 # x_array= ae_model.encoder(brainscan.img) for i in report_paths
@@ -24,6 +25,7 @@ import pickle
 from pathlib import Path
 from typing import Dict, Generator, List
 
+import colorcet as cc
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -220,6 +222,70 @@ def visualize_features(features):
     wandb.finish()
 
 
+def build_feature_dict(model: Autoencoder, datapoints_generator):
+    # X = []
+    feat_dict = {}
+    # i = 0
+    for path in datapoints_generator:
+        # if i > 2000:
+        # break
+        brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
+        img_tensor = load_to_tensor(img=brainscan_obj.img)
+        img_tensor = img_tensor.to(model.device).unsqueeze(0)
+        with torch.no_grad():
+            feature_vector = model.encoder(img_tensor).squeeze(0).cpu()
+            # X.append(feature_vector.cpu().numpy())
+            feat_dict[brainscan_obj.id] = feature_vector.numpy()
+        # i += 1
+    # X_array = np.array(X)
+    # print(X_array.shape)
+    # return X_array
+    compressor = zstandard.ZstdCompressor()
+    compressed_data = compressor.compress(pickle.dumps(feat_dict))
+    with open(
+        Path(
+            "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/"
+        ).joinpath("feature_dict.pkl.zst"),
+        "wb",
+    ) as compressed_file:
+        compressed_file.write(compressed_data)
+    return feat_dict
+
+
+def visualize_features_dict(feat_dict):
+    wandb.init(project="Feature Visualization", entity="dominikgoeller")
+    features = np.array(list(feat_dict.values()))
+    reducer = umap.UMAP(random_state=42)
+    embedding = reducer.fit_transform(features)
+    labels_set = set(extract_ds(key) for key in feat_dict.keys())
+    labels = [extract_ds(key) for key in feat_dict.keys()]
+    # print(embedding.shape)
+    n_labels = len(labels_set)
+    palette = sns.color_palette(cc.glasbey, n_colors=n_labels)
+    # sns.color_palette("hsv", None)
+    plt.figure(figsize=(10, 8))
+    plot = sns.scatterplot(
+        x=embedding[:, 0],
+        y=embedding[:, 1],
+        hue=labels,
+        palette=palette,
+        legend="full",
+    )
+    plt.title("UMAP projection of the Features")
+    # plot_filename = ""
+    # plt.savefig(plot_filename)
+
+    wandb.log({"UMAP Visualization": wandb.Image(plot)})
+
+    wandb.finish()
+
+
+def extract_ds(key):
+    # This pattern looks for 'ds-' followed by any characters until the next underscore
+    match = re.search(r"(ds-[a-z0-9]+)_", key)
+    return match.group(1) if match else None
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluation Script path inputs")
     parser.add_argument(
@@ -231,7 +297,7 @@ def parse_args():
         "--ckptpath",
         help="Path to model checkpoint",
     )
-    parser.add_argument("--test", help="File path to test data")
+    parser.add_argument("--test", default=None, help="File path to test data")
 
     args = parser.parse_args()
 
@@ -246,20 +312,21 @@ def main():
     ckpt_path = ARGS.ckptpath
     model = load_model(ckpt_path=ckpt_path)
 
-    X_array = build_feature_matrix(model=model, datapoints_generator=train_data_gen)
+    # X_array = build_feature_matrix(model=model, datapoints_generator=train_data_gen)
+    feat_dict = build_feature_dict(model=model, datapoints_generator=train_data_gen)
 
-    visualize_features(features=X_array)
+    visualize_features_dict(feat_dict=feat_dict)
 
-    clf = fit_classifier(feature_matrix=X_array)
+    # clf = fit_classifier(feature_matrix=X_array)
 
-    test_path = ARGS.test
-    test_path_gen = load_data(data_path=test_path)
+    # test_path = ARGS.test
+    # test_path_gen = load_data(data_path=test_path)
 
-    test_dict = build_test_data_matrix(test_path_generator=test_path_gen, model=model)
+    # test_dict = build_test_data_matrix(test_path_generator=test_path_gen, model=model)
 
-    results_dict = make_predictions(clf=clf, test_dict=test_dict)
+    # results_dict = make_predictions(clf=clf, test_dict=test_dict)
 
-    calculate_conf_matrix(results_dict=results_dict)
+    # calculate_conf_matrix(results_dict=results_dict)
 
 
 if __name__ == "__main__":
