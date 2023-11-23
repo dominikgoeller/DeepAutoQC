@@ -1,6 +1,4 @@
-import multiprocessing
 import pickle
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import List
 
@@ -20,13 +18,6 @@ def compress_and_save(brain_scan, compressed_dir, compressor):
 
 
 def unpack_single_pickle(p, save_path):
-    # unpacked_dir = Path(
-    #    "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
-    # )
-    # compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
-    # compressed_dir = Path(
-    #    "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_bad_compressed"
-    # )
     compressed_dir = Path(save_path)
     compressed_dir.mkdir(exist_ok=True)
     # datapoints: List[BrainScan] = load_from_pickle(p)
@@ -36,29 +27,5 @@ def unpack_single_pickle(p, save_path):
         compress_and_save(brain_scan, compressed_dir, compressor)
 
 
-def unpack_pickles(path, unpacked_dir, compressed_dir):
-    pickle_paths = list(Path(path).glob("*.pkl"))
-    print(f"Number of pickle files: {len(pickle_paths)}")
-
-    unpacked_dir = Path(unpacked_dir)
-    compressed_dir = Path(compressed_dir)
-    unpacked_dir.mkdir(exist_ok=True)
-    compressed_dir.mkdir(exist_ok=True)
-
-    # with ProcessPoolExecutor() as executor:
-    #    executor.map(
-    #        unpack_single_pickle,
-    #        pickle_paths,
-    #        [unpacked_dir] * len(pickle_paths),
-    #        [compressed_dir] * len(pickle_paths),
-    #    )
-    for p in pickle_paths:
-        unpack_single_pickle(p, unpacked_dir, compressed_dir)
-
-
 if __name__ == "__main__":
-    input_dir = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/original"
-    output_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
-    compressed_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked_compressed"
-
-    unpack_pickles(input_dir, output_dir, compressed_dir)
+    pass

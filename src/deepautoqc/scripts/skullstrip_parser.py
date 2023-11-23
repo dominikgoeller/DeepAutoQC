@@ -198,7 +198,6 @@ def process_image(
             # Subtract 1 from positions because of 0-based indexing
             unusable_positions = [(row - 1, col - 1) for row, col in parsed_tuples]
 
-            # Update labels of unusable images
             for i, result in enumerate(results):
                 row, col = i // 7, i % 7
                 if (row, col) in unusable_positions:
@@ -218,7 +217,7 @@ def process_image(
         # save_to_pickle(data=results, file_path=pickle_path)
         unpack_single_pickle(
             p=results, save_path=save_path
-        )  # change function name and variables at times
+        )  # change function name and variables at times for saving one slice vs the entire report
 
 
 def worker(image_path, save_path, ARGS):
@@ -235,7 +234,7 @@ def worker(image_path, save_path, ARGS):
 
 
 def delete_files(directory, filenames_to_delete):
-    # Delete files that match the given filenames
+    # Delete files from training data that match the given filenames in that case the 300 randomly selected for my test set
     path = Path(directory)
     for file in path.iterdir():
         if any(fn in file.name for fn in filenames_to_delete):
@@ -243,7 +242,7 @@ def delete_files(directory, filenames_to_delete):
 
 
 def find_reports_random(directory, report_type):
-    # Create a Path object for the directory
+    # This function was used to get 300 randomly selected good reports for my test set
     path = Path(directory)
 
     # Filter out files that contain 'label-good' and the specific report type
@@ -253,7 +252,6 @@ def find_reports_random(directory, report_type):
         if "label-good" in file.name and report_type in file.name
     ]
 
-    # Randomly select 300 file paths
     num_files_to_select = min(300, len(good_label_files))
     selected_files = random.sample(good_label_files, num_files_to_select)
 
@@ -261,6 +259,7 @@ def find_reports_random(directory, report_type):
 
 
 def main():
+    # Pay attention to line 277 label-good or label-bad for parsing
     ARGS = parse_args()
     print(f"Arguments: {ARGS}")
 

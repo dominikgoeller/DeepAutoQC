@@ -224,9 +224,6 @@ def visualize_features(features):
         legend="full",
     )
     plt.title("UMAP projection of the Features")
-    # plot_filename = ""
-    # plt.savefig(plot_filename)
-
     wandb.log({"UMAP Visualization": wandb.Image(plot)})
 
     wandb.finish()
