@@ -1,9 +1,9 @@
 import lightning.pytorch as pl
 import optuna
+import wandb
 from lightning.pytorch.loggers import WandbLogger
 from optuna.integration import PyTorchLightningPruningCallback
 
-import wandb
 from deepautoqc.experiments.data_setup import (
     BrainScanDataModule,
     TestDataModule,
@@ -11,6 +11,10 @@ from deepautoqc.experiments.data_setup import (
 from deepautoqc.experiments.ResNet18_AE import Autoencoder
 from deepautoqc.experiments.resnet18_vae import VAE_Lightning
 from deepautoqc.experiments.utils import GenerateCallback
+
+"""
+Tried to use the optuna framework for hyperparameter optimization but not applicable for our current progress
+"""
 
 
 def objective(trial):
