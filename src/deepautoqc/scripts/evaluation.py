@@ -34,6 +34,7 @@ import torchio as tio
 import umap.umap_ as umap
 import wandb
 import zstandard
+from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
 from sklearn.svm import OneClassSVM
 
@@ -83,6 +84,15 @@ def single_brainscan_loader(scan_path):
         compressed_data = compressed_file.read()
     uncompressed_data = decompressor.decompress(compressed_data)
     item: BrainScan = pickle.loads(uncompressed_data)
+    return item
+
+
+def zst_loader(path):
+    decompressor = zstandard.ZstdDecompressor()
+    with open(path, "rb") as compressed_file:
+        compressed_data = compressed_file.read()
+    uncompressed_data = decompressor.decompress(compressed_data)
+    item = pickle.loads(uncompressed_data)
     return item
 
 
@@ -223,23 +233,16 @@ def visualize_features(features):
 
 
 def build_feature_dict(model: Autoencoder, datapoints_generator):
-    # X = []
     feat_dict = {}
-    # i = 0
+
     for path in datapoints_generator:
-        # if i > 2000:
-        # break
         brainscan_obj: BrainScan = single_brainscan_loader(scan_path=path)
         img_tensor = load_to_tensor(img=brainscan_obj.img)
         img_tensor = img_tensor.to(model.device).unsqueeze(0)
         with torch.no_grad():
             feature_vector = model.encoder(img_tensor).squeeze(0).cpu()
-            # X.append(feature_vector.cpu().numpy())
             feat_dict[brainscan_obj.id] = feature_vector.numpy()
-        # i += 1
-    # X_array = np.array(X)
-    # print(X_array.shape)
-    # return X_array
+
     compressor = zstandard.ZstdCompressor()
     compressed_data = compressor.compress(pickle.dumps(feat_dict))
     with open(
@@ -272,8 +275,6 @@ def visualize_features_dict(feat_dict):
         legend="full",
     )
     plt.title("UMAP projection of the Features")
-    # plot_filename = ""
-    # plt.savefig(plot_filename)
 
     wandb.log({"UMAP Visualization": wandb.Image(plot)})
 
@@ -284,6 +285,39 @@ def extract_ds(key):
     # This pattern looks for 'ds-' followed by any characters until the next underscore
     match = re.search(r"(ds-[a-z0-9]+)_", key)
     return match.group(1) if match else None
+
+
+def normalize_and_fit_clf():
+    feat_dict_path = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/feature_dict.pkl.zst"
+    feat_dict = zst_loader(path=feat_dict_path)
+    feat_array = np.array(list(feat_dict.values()))
+
+    scaler = preprocessing.StandardScaler().fit(feat_array)
+    X_scaled = scaler.transform(feat_array)
+
+    scaled_dict = {key: X_scaled[i] for i, key in enumerate(feat_dict.keys())}
+
+    ae_pickle_path = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/"
+
+    zst_compress(
+        folder_path=ae_pickle_path, file=scaled_dict, file_name="feature_dict_scaled"
+    )
+
+    clf = OneClassSVM().fit(X_scaled)
+
+    zst_compress(folder_path=ae_pickle_path, file=clf, file_name="oneclassSVM_fitted")
+
+    return clf, scaler
+
+
+def zst_compress(folder_path, file, file_name):
+    compressor = zstandard.ZstdCompressor()
+    compressed_data = compressor.compress(pickle.dumps(file))
+    with open(
+        Path(folder_path).joinpath(f"{file_name}.pkl.zst"),
+        "wb",
+    ) as compressed_file:
+        compressed_file.write(compressed_data)
 
 
 def parse_args():
@@ -306,27 +340,45 @@ def parse_args():
 
 def main():
     ARGS = parse_args()
-    train_path = ARGS.train
-    train_data_gen = load_data(data_path=train_path)
+
+    # train_path = ARGS.train
+    # train_data_gen = load_data(data_path=train_path)
 
     ckpt_path = ARGS.ckptpath
     model = load_model(ckpt_path=ckpt_path)
 
     # X_array = build_feature_matrix(model=model, datapoints_generator=train_data_gen)
-    feat_dict = build_feature_dict(model=model, datapoints_generator=train_data_gen)
+    # feat_dict = build_feature_dict(model=model, datapoints_generator=train_data_gen)
 
-    visualize_features_dict(feat_dict=feat_dict)
+    # visualize_features_dict(feat_dict=feat_dict)
 
     # clf = fit_classifier(feature_matrix=X_array)
 
-    # test_path = ARGS.test
-    # test_path_gen = load_data(data_path=test_path)
+    ae_pickle_path = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/"
+    clf, scaler = normalize_and_fit_clf()
 
-    # test_dict = build_test_data_matrix(test_path_generator=test_path_gen, model=model)
+    test_path = ARGS.test
+    test_path_gen = load_data(data_path=test_path)
 
-    # results_dict = make_predictions(clf=clf, test_dict=test_dict)
+    test_dict = build_test_data_matrix(test_path_generator=test_path_gen, model=model)
 
-    # calculate_conf_matrix(results_dict=results_dict)
+    test_val_array = np.array(list(test_dict.values()))
+    scaled_test_values = scaler.transform(test_val_array)
+    scaled_test_dict = {
+        key: scaled_test_values[i] for i, key in enumerate(test_dict.keys())
+    }
+
+    zst_compress(
+        folder_path=ae_pickle_path, file=scaled_test_dict, file_name="test_dict_scaled"
+    )
+
+    results_dict = make_predictions(clf=clf, test_dict=test_dict)
+
+    zst_compress(
+        folder_path=ae_pickle_path, file=results_dict, file_name="results_dict"
+    )
+
+    calculate_conf_matrix(results_dict=results_dict)
 
 
 if __name__ == "__main__":
