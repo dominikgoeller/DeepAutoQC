@@ -8,7 +8,6 @@ import torch.nn.functional as F
 import wandb
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.tuner import Tuner
 from torchsummary import summary
 from torchvision.transforms import transforms
 
@@ -184,8 +183,6 @@ def train_model(epochs: int, batch_size: int):
             filename="autoencoder-{epoch:02d}",
         ),
     )
-    # tuner = Tuner(trainer=trainer)
-    # tuner.scale_batch_size(model=model, datamodule=dm, mode="power")
 
     dm.prepare_data()
     dm.setup()
