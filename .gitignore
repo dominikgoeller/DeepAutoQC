@@ -25,6 +25,7 @@ src/deepautoqc/ckpts/ResNet50/EarlyStopcheckpoint2510.pt
 src/deepautoqc/ckpts/
 src/*.egg-info/
 src/deepautoqc/lightning_logs
+lightning_logs/
 .mypy_cache
 src/deepautoqc/visualizations
 # User-specific files (MonoDevelop/Xamarin Studio)
