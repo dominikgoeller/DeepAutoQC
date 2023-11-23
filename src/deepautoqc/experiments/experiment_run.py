@@ -8,8 +8,6 @@ from deepautoqc.experiments.data_setup import (
     BrainScanDataModule,
     TestDataModule,
 )
-from deepautoqc.experiments.ResNet18_AE import Autoencoder
-from deepautoqc.experiments.resnet18_vae import VAE_Lightning
 from deepautoqc.experiments.utils import GenerateCallback
 
 """
@@ -35,20 +33,16 @@ def objective(trial):
 
     wandb_logger = WandbLogger()
 
-    lr = wandb.config.learning_rate
-    z_dim = wandb.config.z_dim
+    # lr = wandb.config.learning_rate
+    # z_dim = wandb.config.z_dim
     batch_size = wandb.config.batch_size
     max_epochs = wandb.config.max_epochs
-    architecture_type = wandb.config.architecture
+    # architecture_type = wandb.config.architecture
 
     data_dir = "/data/gpfs-1/users/goellerd_c/scratch/deep-auto-qc/parsed_dataset/skull_strip_report/original_unpacked"
     dm = BrainScanDataModule(data_dir=data_dir, batch_size=batch_size)
     dm.setup()
-
-    if architecture_type == "AE":
-        model = Autoencoder(lr=lr, data_module=dm, latent_dim=z_dim)
-    elif architecture_type == "VAE":
-        model = VAE_Lightning(z_dim=z_dim, lr=lr, data_module=dm)
+    model = None
 
     reconstruct_cb = GenerateCallback(dm.val_dataloader(), every_n_epochs=5)
 
