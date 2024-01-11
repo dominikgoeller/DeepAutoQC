@@ -352,7 +352,18 @@ def main():
     # clf = fit_classifier(feature_matrix=X_array)
 
     ae_pickle_path = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/"
-    clf, scaler = normalize_and_fit_clf()
+    # clf, scaler = normalize_and_fit_clf()
+
+    # just for one time purposes
+    feat_dict_path = "/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/feature_dict.pkl.zst"
+    feat_dict = zst_loader(path=feat_dict_path)
+    feat_array = np.array(list(feat_dict.values()))
+
+    scaler = preprocessing.StandardScaler().fit(feat_array)
+
+    clf = zst_loader(
+        path="/data/gpfs-1/users/goellerd_c/work/deep-auto-qc/parsed_dataset/skull_strip_report/ae_data/oneclassSVM_fitted.pkl.zst"
+    )
 
     test_path = ARGS.test
     test_path_gen = load_data(data_path=test_path)
